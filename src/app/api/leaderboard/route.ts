@@ -1,18 +1,20 @@
 import 'server-only';
 import { NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import type { DocumentData } from 'firebase/firestore';
 
 // Initialize Firebase Admin SDK if not already initialized.
-if (!admin.apps.length) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 export async function GET() {
   try {
     const usersSnapshot = await db.collection('users_public').get();
-    const leaderboardData = usersSnapshot.docs.map(doc => {
+    const leaderboardData = usersSnapshot.docs.map((doc: DocumentData) => {
       const data = doc.data();
       // Provide default values for scores if they don't exist
       const scores = data.scores || { totalCorrect: 0, totalAnswered: 0, perfectScores: 0 };

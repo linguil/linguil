@@ -1,12 +1,13 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
-import * as admin from "firebase-admin";
+import { getApps, initializeApp } from "firebase-admin/app";
+import { FieldValue } from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
 import fetch from "node-fetch";
 import { db } from "./init";
 
-if (admin.apps.length === 0) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
 const discordBotToken = defineSecret("DISCORD_BOT_TOKEN");
@@ -47,7 +48,7 @@ export const logDiscordServerCount = onSchedule(
 
       await db.collection("discord_metrics").add({
         serverCount: serverCount,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       });
 
       logger.info(`Successfully logged Discord server count: ${serverCount}`);

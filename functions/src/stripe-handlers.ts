@@ -1,4 +1,5 @@
-import * as admin from "firebase-admin";
+import { getAuth } from "firebase-admin/auth";
+import { Timestamp } from "firebase-admin/firestore";
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { db } from "./init";
@@ -26,7 +27,7 @@ export const createCheckoutSession = onRequest({
 
   try {
     // Verify the ID token to get the user's UID and email.
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const decodedToken = await getAuth().verifyIdToken(idToken);
     const uid = decodedToken.uid;
     const email = decodedToken.email;
 
@@ -112,7 +113,7 @@ export const stripeWebhook = onRequest({ region: "us-central1", secrets: ["STRIP
 
     try {
       // Set a custom claim on the user's auth token to indicate they have paid.
-      await admin.auth().setCustomUserClaims(uid, { hasPaid: true });
+      await getAuth().setCustomUserClaims(uid, { hasPaid: true });
       // Update the user's document in Firestore to reflect their payment status.
       await db.collection("users").doc(uid).set({ hasPaid: true }, { merge: true });
 
@@ -123,7 +124,7 @@ export const stripeWebhook = onRequest({ region: "us-central1", secrets: ["STRIP
         currency: session.currency,
         customerEmail: session.customer_details?.email || "anonymous",
         firebaseUID: uid,
-        createdAt: admin.firestore.Timestamp.fromMillis(session.created * 1000)
+        createdAt: Timestamp.fromMillis(session.created * 1000)
       }, { merge: true });
 
       console.log(`Successfully processed purchase for user ${uid}.`);

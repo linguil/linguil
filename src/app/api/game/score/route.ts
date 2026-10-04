@@ -1,11 +1,12 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { authenticateRequest } from '@/lib/api/auth-utils';
 
 // Initialize Firebase Admin SDK if not already initialized.
-if (admin.apps.length === 0) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
 // Interface for the expected score data in the request body.
@@ -17,7 +18,7 @@ interface ScoreData {
 }
 
 export async function POST(req: NextRequest) {
-  const db = admin.firestore();
+  const db = getFirestore();
 
   try {
     // 1. Authenticate the user using the Firebase ID token from the cookie.
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       score,
       totalQuestions,
       questionResults,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: FieldValue.serverTimestamp(),
     };
 
     // 6. Save the new score record.
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const db = admin.firestore();
+  const db = getFirestore();
 
   try {
     const authResult = await authenticateRequest(req);

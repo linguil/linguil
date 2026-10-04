@@ -1,13 +1,14 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { authenticateRequest } from '@/lib/api/auth-utils';
 
-if (!admin.apps.length) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     const friendName = friendPublicDoc.data()?.displayName || 'A new friend';
 
     await userDocRef.update({
-        friends: admin.firestore.FieldValue.arrayUnion(friendUid)
+        friends: FieldValue.arrayUnion(friendUid)
     });
 
     return NextResponse.json({ message: 'Friend added successfully', friendName });

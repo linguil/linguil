@@ -1,7 +1,7 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/api/auth-utils';
-import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 
 export async function GET(req: NextRequest) {
   // Verify the Auth header or cookie.
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const db = admin.firestore();
+    const db = getFirestore();
     const userDoc = await db.collection('users').doc(authResult.uid).get();
 
     if (!userDoc.exists) {

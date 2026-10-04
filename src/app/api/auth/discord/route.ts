@@ -1,12 +1,12 @@
 import 'server-only';
 // Handles the entire Discord authentication process.
 import { NextRequest, NextResponse } from 'next/server';
-import * as admin from "firebase-admin";
+import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth, UserRecord } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin SDK if not already initialized.
-if (!admin.apps.length) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
 // The URL of the Firebase function to create a new user's database records.

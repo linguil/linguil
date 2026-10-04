@@ -24,6 +24,21 @@
         "tsconfig.json",
         "eslint.config.js"
       ]
+    },
+    {
+      "kit": "firestore-bigquery-export",
+      "sourcePackage": {
+        "name": "@firebase-function-kits/firestore-bigquery-export"
+      },
+      "source": "function-kits/firestore-bigquery-export/source",
+      "instances": {
+        "firestore-bigquery-export": "function-kits/firestore-bigquery-export/config-firestore-bigquery-export",
+        "firestore-bigquery-export-bvme": "function-kits/firestore-bigquery-export/config-firestore-bigquery-export-bvme",
+        "firestore-bigquery-export-soyr": "function-kits/firestore-bigquery-export/config-firestore-bigquery-export-soyr"
+      },
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
     }
   ],
   "storage": {

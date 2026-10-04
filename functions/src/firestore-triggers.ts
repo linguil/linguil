@@ -1,7 +1,8 @@
-import * as admin from "firebase-admin";
+import { getAuth } from "firebase-admin/auth";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { db } from "./init";
 import { sendMetaCapiRegistration } from "./user-management";
+import { QueryDocumentSnapshot } from "firebase-admin/firestore";
 
 // Helper function to introduce a delay.
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -43,7 +44,7 @@ export const onDailyScoreCreate = onDocumentCreated({ document: "users/{userId}/
         const totalAnswered = snapshot.size * 3; // 3 questions per day.
 
         // Iterate over each daily score to calculate the totals.
-        snapshot.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
+        snapshot.forEach((doc: QueryDocumentSnapshot) => {
           const data = doc.data();
           if (data && typeof data.score === "number") {
             totalCorrect += data.score;
@@ -125,8 +126,8 @@ export const onUserUpdate = onDocumentUpdated(
       const hasPaid = afterData.hasPaid === true;
 
       // Update the custom claims on the user's auth token.
-      const user = await admin.auth().getUser(userId);
-      await admin.auth().setCustomUserClaims(userId, { ...user.customClaims, hasPaid: hasPaid });
+      const user = await getAuth().getUser(userId);
+      await getAuth().setCustomUserClaims(userId, { ...user.customClaims, hasPaid: hasPaid });
     } catch (err) {
       console.error(`Error in onUserUpdate for user ${event.params.userId}:`, err);
     }

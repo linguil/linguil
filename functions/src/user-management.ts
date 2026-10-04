@@ -1,4 +1,5 @@
-import * as admin from "firebase-admin";
+import { getAuth, UserRecord } from "firebase-admin/auth";
+import { FieldValue } from "firebase-admin/firestore";
 import * as functions from "firebase-functions/v1";
 import { onRequest } from "firebase-functions/v2/https";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
@@ -126,7 +127,7 @@ const persistRegistrationTracking = async (
       clientIp: context.clientIp ?? null,
       userAgent: context.userAgent ?? null,
       metaCapiRegistrationEventId: eventId,
-      metaCapiRegistrationReadyAt: admin.firestore.FieldValue.serverTimestamp(),
+      metaCapiRegistrationReadyAt: FieldValue.serverTimestamp(),
     },
     { merge: true }
   );
@@ -135,7 +136,7 @@ const persistRegistrationTracking = async (
 };
 
 // Internal function to set up a new user's documents and Stripe customer.
-const setupNewUser = async (user: admin.auth.UserRecord) => {
+const setupNewUser = async (user: UserRecord) => {
   const userPublicDocRef = db.collection("users_public").doc(user.uid);
   const userDocRef = db.collection("users").doc(user.uid);
   const doc = await userPublicDocRef.get();
@@ -169,7 +170,7 @@ const setupNewUser = async (user: admin.auth.UserRecord) => {
         totalAnswered: 0,
         totalCorrect: 0,
       },
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     // Commit the batch
@@ -208,12 +209,12 @@ export const createUserAccount = onRequest(
         return;
       }
 
-      let userRecord: admin.auth.UserRecord | null = null;
+      let userRecord: UserRecord | null = null;
 
       try {
         // Check if a user with the given email already exists.
         try {
-          await admin.auth().getUserByEmail(email);
+          await getAuth().getUserByEmail(email);
           res.status(409).send("A user with this email address already exists");
           return;
         } catch (error: any) {
@@ -224,7 +225,7 @@ export const createUserAccount = onRequest(
         }
 
         // Create a new user in Firebase Authentication.
-        userRecord = await admin.auth().createUser({
+        userRecord = await getAuth().createUser({
           email: email,
           password: password,
           displayName: name,
@@ -249,7 +250,7 @@ export const createUserAccount = onRequest(
         });
 
         // Generate a custom token for the client to use for a reliable sign-in.
-        const customToken = await admin.auth().createCustomToken(userRecord.uid);
+        const customToken = await getAuth().createCustomToken(userRecord.uid);
 
         // Return the token to the client.
         res.json({ token: customToken });
@@ -258,7 +259,7 @@ export const createUserAccount = onRequest(
         // Clean up user record if user creation or setup fails.
         if (userRecord) {
           try {
-            await admin.auth().deleteUser(userRecord.uid);
+            await getAuth().deleteUser(userRecord.uid);
           } catch (cleanupError) {
             console.error(`CRITICAL: Failed to clean up user ${userRecord.uid} after a failed signup.`, cleanupError);
           }
@@ -290,7 +291,7 @@ export const trackSocialRegistration = onCall(
     const clientIp = request.rawRequest.ip;
     const userAgent = request.rawRequest.headers["user-agent"];
 
-    const authUser = await admin.auth().getUser(uid);
+    const authUser = await getAuth().getUser(uid);
     await setupNewUser(authUser);
 
     const trackingContext = { leadId, fbc, fbp, clientIp, userAgent };

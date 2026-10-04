@@ -1,4 +1,4 @@
-import * as admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { onRequest } from "firebase-functions/v2/https";
 import { db } from "./init";
 
@@ -48,7 +48,7 @@ export const redditGoldWebhook = onRequest({ region: "us-central1", memory: "256
       currency: "bsd",
       customerEmail: customerEmail,
       firebaseUID: userId,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
     // Mark the user as having paid.

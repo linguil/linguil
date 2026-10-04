@@ -1,13 +1,14 @@
 import 'server-only';
 import { type NextRequest, NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getStorage } from 'firebase-admin/storage';
 
 // Force the use of the Node.js runtime for this route because it uses server-side packages.
 export const runtime = 'nodejs';
 
 // Initialize Firebase Admin SDK if not already initialized.
-if (admin.apps.length === 0) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
 // GET handler for the audio proxy API route.
@@ -22,7 +23,7 @@ export const GET = async (
     }
 
     const fullPath = `audio/${filePath.join('/')}`;
-    const bucket = admin.storage().bucket();
+    const bucket = getStorage().bucket();
     const file = bucket.file(fullPath);
 
     const [exists] = await file.exists();
@@ -39,9 +40,9 @@ export const GET = async (
     // Convert the Node.js stream to a Web Stream for the NextResponse.
     const webStream = new ReadableStream({
       start(controller) {
-        stream.on('data', (chunk) => controller.enqueue(chunk));
+        stream.on('data', (chunk: Buffer) => controller.enqueue(chunk));
         stream.on('end', () => controller.close());
-        stream.on('error', (err) => controller.error(err));
+        stream.on('error', (err: Error) => controller.error(err));
       },
       cancel() {
         stream.destroy();

@@ -1,11 +1,12 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
-if (admin.apps.length === 0) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
 // Authenticates an incoming API request.
@@ -44,7 +45,7 @@ export const authenticateRequest = async (req: NextRequest): Promise<{ uid: stri
   }
 
   try {
-    const decodedToken = await admin.auth().verifyIdToken(tokenValue);
+    const decodedToken = await getAuth().verifyIdToken(tokenValue);
     return { uid: decodedToken.uid };
   } catch (error) {
     console.error('Error verifying Firebase ID token:', error);

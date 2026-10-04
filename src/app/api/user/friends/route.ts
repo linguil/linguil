@@ -1,13 +1,14 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 import { authenticateRequest } from '@/lib/api/auth-utils';
 
-if (!admin.apps.length) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch the public data for the user and their friends
     const usersPublicRef = db.collection('users_public');
-    const playerDocs = await usersPublicRef.where(admin.firestore.FieldPath.documentId(), 'in', allUids).get();
+    const playerDocs = await usersPublicRef.where(FieldPath.documentId(), 'in', allUids).get();
 
     const playersData = playerDocs.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
 

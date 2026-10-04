@@ -1,16 +1,16 @@
-import * as admin from "firebase-admin";
-import { type UserRecord } from "firebase-admin/auth";
+import { getAuth, type UserRecord } from "firebase-admin/auth";
+import { getApps, initializeApp } from "firebase-admin/app";
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import * as logger from "firebase-functions/logger";
 import { db } from "./init";
 
 // Initialize Firebase Admin SDK if it hasn't been already.
-if (admin.apps.length === 0) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
-const auth = admin.auth();
+const auth = getAuth();
 
 // Define secrets used in this function.
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");

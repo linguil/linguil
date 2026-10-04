@@ -1,13 +1,14 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { authenticateRequest } from '@/lib/api/auth-utils';
 
-if (!admin.apps.length) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     // Remove friend from the user's friend list
     await userDocRef.update({
-        friends: admin.firestore.FieldValue.arrayRemove(friendUid)
+        friends: FieldValue.arrayRemove(friendUid)
     });
 
     return new NextResponse(JSON.stringify({ message: 'Friend removed successfully' }), { status: 200 });

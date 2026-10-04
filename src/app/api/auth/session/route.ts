@@ -1,13 +1,14 @@
 import 'server-only';
 import { NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 // Initialize Firebase Admin SDK if not already done.
-if (admin.apps.length === 0) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // Handles the creation and fulfillment of external Google Auth sessions.
 export async function POST(req: Request) {
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
 
   if (action === 'create') {
     // Discord creates a pending session.
-    await sessionRef.set({ status: 'pending', createdAt: admin.firestore.FieldValue.serverTimestamp() });
+    await sessionRef.set({ status: 'pending', createdAt: FieldValue.serverTimestamp() });
     return NextResponse.json({ success: true });
   }
 

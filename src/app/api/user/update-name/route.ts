@@ -1,10 +1,11 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { authenticateRequest } from '@/lib/api/auth-utils';
 
-if (!admin.apps.length) {
-  admin.initializeApp();
+if (getApps().length === 0) {
+  initializeApp();
 }
 
 // This function handles updating a user's display name.
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
         return new NextResponse(JSON.stringify({ message: 'Invalid name provided' }), { status: 400 });
     }
 
-    const db = admin.firestore();
+    const db = getFirestore();
     const userPublicRef = db.collection('users_public').doc(uid);
 
     await userPublicRef.update({ displayName: newName });

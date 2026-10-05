@@ -3,8 +3,7 @@
 import { useReducer, useCallback } from 'react';
 import { useToast } from '@/client/hooks/use-toast';
 import { useAuth } from '@/client/hooks/use-auth';
-import { navigateTo } from '@devvit/web/client';
-
+import { purchase, OrderResultStatus } from '@devvit/web/client';
 
 // State structure for payment processing.
 interface PaymentsState {
@@ -16,7 +15,8 @@ interface PaymentsState {
 type PaymentsAction =
   | { type: 'PROCESS_START' }
   | { type: 'PROCESS_SUCCESS' }
-  | { type: 'PROCESS_ERROR'; payload: string };
+  | { type: 'PROCESS_ERROR'; payload: string }
+  | { type: 'RESET' };
 
 // Initial state for the payment process.
 const initialState: PaymentsState = {
@@ -33,12 +33,16 @@ const paymentsReducer = (state: PaymentsState, action: PaymentsAction): Payments
       return { isProcessing: false, error: null };
     case 'PROCESS_ERROR':
       return { isProcessing: false, error: action.payload };
+    case 'RESET':
+      return { isProcessing: false, error: null };
     default:
       return state;
   }
 };
 
-// Custom hook for handling Stripe payment checkout sessions.
+// Custom hook for handling Reddit Gold payments in Devvit.
+const LINGUIL_PLUS_SKU = 'linguil_plus';
+
 export const usePayments = () => {
   const { user } = useAuth(); // Get the current user from auth context.
   const [state, dispatch] = useReducer(paymentsReducer, initialState);
@@ -49,62 +53,41 @@ export const usePayments = () => {
     toast({ title, description, variant: 'destructive' });
   }, [toast]);
 
-  // Creates a Stripe checkout session and redirects the user to checkout.
-  const createCheckoutSession = useCallback(async (priceId: string, successUrl?: string) => {
+  // Purchases linguil+ using Reddit Gold.
+  const purchaseProduct = useCallback(async (sku: string = LINGUIL_PLUS_SKU, onPurchaseSuccess?: () => Promise<void>) => {
     dispatch({ type: 'PROCESS_START' });
 
     if (!user) {
       showErrorToast("Authentication error", "You must be signed in to make a purchase");
       dispatch({ type: 'PROCESS_ERROR', payload: 'User not authenticated' });
-      return;
+      return false;
     }
 
     try {
-      if (!priceId) {
-        showErrorToast("Payment error", "No product selected");
-        dispatch({ type: 'PROCESS_ERROR', payload: 'Price ID not specified' });
-        return;
+      const result = await purchase(sku);
+      if (result.status !== OrderResultStatus.STATUS_SUCCESS) {
+        const errorMessage = result.errorMessage || 'An unknown error occurred.';
+        dispatch({ type: 'PROCESS_ERROR', payload: errorMessage });
+        showErrorToast('Payment error', errorMessage);
+        return false;
       }
 
-      const baseUrl = successUrl || window.location.href;
-      const finalUrl = new URL(baseUrl);
-      finalUrl.searchParams.set('session_id', '{CHECKOUT_SESSION_ID}');
-      
-      const cancelUrl = window.location.origin;
-
-      // Call the server API. Authentication is handled by the browser sending the session cookie automatically.
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          priceId,
-          successUrl: finalUrl.toString(),
-          cancelUrl,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create checkout session");
+      dispatch({ type: 'PROCESS_SUCCESS' });
+      if (onPurchaseSuccess) {
+        await onPurchaseSuccess();
       }
-      
-      const url = data.url;
-      if (!url) {
-        throw new Error("Failed to retrieve checkout session URL");
-      }
-
-      // Redirect the user to the Stripe checkout page using the Devvit client API.
-      navigateTo(url);
-
+      return true;
     } catch (err: any) {
-      const errorMessage = "Failed to create checkout session";
+      const errorMessage = err?.message || 'An unexpected error occurred.';
       dispatch({ type: 'PROCESS_ERROR', payload: errorMessage });
-      showErrorToast("Payment error", err.message || errorMessage);
+      showErrorToast("Payment error", errorMessage);
+      return false;
     }
   }, [showErrorToast, user]);
 
-  return { ...state, createCheckoutSession };
+  const resetPayments = useCallback(() => {
+    dispatch({ type: 'RESET' });
+  }, []);
+
+  return { ...state, purchaseProduct, resetPayments };
 };

@@ -77,37 +77,17 @@
     ]
   },
   "marketingAssets": {
-      "icon": "src/client/public/icon-1024x1024.png"
-    },
+    "icon": "src/client/public/icon-1024x1024.png"
+  },
   "dev": {
     "subreddit": "linguil"
   },
   "settings": {
     "global": {
-      "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": {
-        "type": "string",
-        "label": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
-        "defaultValue": "pk_live_51S5yOfIpjjTFqpDKAlzvaysa5LqDyT6Deeg7mG7ZBq4Pde3dZJkQAv9VZCVLBWFiaTRAeKZ3Ilvsydlnez9s4EQA0069d7cFWU"
-      },
-      "NEXT_PUBLIC_STRIPE_PRICE_ID_FIXED": {
-        "type": "string",
-        "label": "NEXT_PUBLIC_STRIPE_PRICE_ID_FIXED",
-        "defaultValue": "price_1SVxX3IpjjTFqpDKAFZWKyXy"
-      },
-      "NEXT_PUBLIC_STRIPE_PRICE_ID_CUSTOM": {
-        "type": "string",
-        "label": "NEXT_PUBLIC_STRIPE_PRICE_ID_CUSTOM",
-        "defaultValue": "price_1SVxX3IpjjTFqpDKNYOhCteE"
-      },
       "NEXT_PUBLIC_FIREBASE_CREATE_USER_FUNCTION_URL": {
         "type": "string",
         "label": "NEXT_PUBLIC_FIREBASE_CREATE_USER_FUNCTION_URL",
         "defaultValue": "https://us-central1-linguil.cloudfunctions.net/createUserAccount"
-      },
-      "NEXT_PUBLIC_FIREBASE_CHECKOUT_FUNCTION_URL": {
-        "type": "string",
-        "label": "NEXT_PUBLIC_FIREBASE_CHECKOUT_FUNCTION_URL",
-        "defaultValue": "https://us-central1-linguil.cloudfunctions.net/createCheckoutSession"
       },
       "NEXT_PUBLIC_FIREBASE_EMAIL_AUTH_FUNCTION_URL": {
         "type": "string",
@@ -118,11 +98,6 @@
         "type": "string",
         "label": "NEXT_PUBLIC_FIREBASE_REDDIT_AUTH_FUNCTION_URL",
         "defaultValue": "https://us-central1-linguil.cloudfunctions.net/redditAuth"
-      },
-      "NEXT_PUBLIC_FIREBASE_ANALYTICS_PROXY_URL": {
-        "type": "string",
-        "label": "NEXT_PUBLIC_FIREBASE_ANALYTICS_PROXY_URL",
-        "defaultValue": "https://us-central1-linguil.cloudfunctions.net/analyticsProxy"
       },
       "NEXT_PUBLIC_FIREBASE_REDDIT_GOLD_WEBHOOK_URL": {
         "type": "string",

@@ -13,7 +13,6 @@ import type { User } from '@/shared/types';
 import { GlobalLoadingSpinner } from '@/client/components/common/GlobalLoadingSpinner';
 import { useToast } from '@/client/hooks/use-toast';
 import { getAuthErrorMessage } from '@/client/lib/auth-errors';
-import { useAnalytics } from '@/client/hooks/use-analytics';
 
 // Defines the shape of the authentication context.
 interface AuthContextType {
@@ -25,8 +24,8 @@ interface AuthContextType {
   signInWithReddit: () => Promise<void>; // Function to initiate Reddit sign-in.
   signInWithCustomToken: (
     token: string,
-    isNewUser: boolean,
-    method: string
+    isNewUser?: boolean,
+    method?: string
   ) => Promise<void>; // Sign in with a custom token from the backend.
   logout: () => Promise<void>; // Function to sign the user out.
   clearAuthError: () => void; // Function to clear any authentication errors.
@@ -51,7 +50,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOutCleanup = useRef<Array<() => void>>([]);
   // Custom hook for displaying toasts.
   const { toast } = useToast();
-  const { logEvent } = useAnalytics();
 
   const [redditUser, setRedditUser] = useState<{ username: string } | null>(null);
   const hasAttemptedRedditAutoSignIn = useRef(false);
@@ -105,7 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Signs in the user by exchanging a custom token for a session cookie.
   const signInWithCustomToken = useCallback(
-    async (token: string, isNewUser: boolean, method: string): Promise<void> => {
+    async (token: string, _isNewUser?: boolean, _method?: string): Promise<void> => {
       setLoading(true);
       clearAuthError();
       try {
@@ -124,16 +122,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // The cookie is now set. Fetch the user profile to sync the client state.
         await fetchUserProfile();
 
-        // Log the successful authentication event.
-        logEvent(isNewUser ? 'sign_up' : 'login', { method });
-
       } catch (error) {
         handleAuthError(error);
       } finally {
         setLoading(false);
       }
     },
-    [clearAuthError, handleAuthError, logEvent, fetchUserProfile]
+    [clearAuthError, handleAuthError, fetchUserProfile]
   );
   
   // On initial mount, check if the user is already logged in via session cookie.
@@ -237,7 +232,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Call the backend endpoint to clear the session cookie.
       await fetch('/api/auth/logout', { method: 'POST' });
-      logEvent('logout', {});
     } catch (error) {
       console.error('Sign out failed:', error);
       toast({
@@ -252,7 +246,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // After logging out on the server, fetch the profile again to clear the local state.
       await fetchUserProfile();
     }
-  }, [logEvent, toast, fetchUserProfile]);
+  }, [toast, fetchUserProfile]);
 
   // The value provided to the AuthContext.
   const value = {

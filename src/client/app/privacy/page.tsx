@@ -11,10 +11,10 @@ export default function PrivacyPolicyPage() {
 
       <h2 className="text-2xl font-bold mt-6 mb-4">1. Information we collect</h2>
       <p className="mb-4">We collect information to provide and improve our service. The types of information we collect are:</p>
-      
+
       <h3 className="text-xl font-semibold mt-4 mb-2">A. Personal information you provide</h3>
       <ul className="list-disc list-inside mb-4 pl-4">
-        <li><strong>Email address:</strong> We collect your email address when you register for an account or connect using a third-party provider like Google. We use this for account creation, authentication, communication, and to create a customer record in Stripe.</li>
+        <li><strong>UID:</strong> We collect your unique Reddit UID when you register for an account. We use this for account creation, authentication, communication, and to link linguil+ to your account.</li>
         <li><strong>(Display) name:</strong> We collect your name during registration or from your Google account to personalise your leaderboard.</li>
         <li><strong>Profile picture URL:</strong> If you sign in with Google, we collect the URL to your profile picture to display within the application.</li>
         <li><strong>Password:</strong> For users who sign up with email, we store a secure, hashed version of your password. We cannot see your plain-text password.</li>
@@ -28,8 +28,8 @@ export default function PrivacyPolicyPage() {
 
       <h3 className="text-xl font-semibold mt-4 mb-2">C. Analytics data</h3>
       <ul className="list-disc list-inside mb-4 pl-4">
-        <li><strong>Usage information:</strong> We use Google Analytics to understand which pages users visit and how they navigate through the app.</li>
-        <li><strong>Payments:</strong> We track completed Stripe payments for enhanced record-keeping and growth analytics.</li>
+        <li><strong>Usage information:</strong> We use Reddit&apos;s Devvit Journeys analytics to track gameplay flow and player progression through the app.</li>
+        <li><strong>Payments:</strong> We track completed Reddit Gold purchases for enhanced record-keeping and growth analytics.</li>
       </ul>
 
       <h2 className="text-2xl font-bold mt-6 mb-4">2. How we use your information</h2>
@@ -38,15 +38,16 @@ export default function PrivacyPolicyPage() {
         <li>Create, maintain, and secure your account.</li>
         <li>Authenticate your access to the application.</li>
         <li>Display your public leaderboard data, including your display name, photo, and game scores.</li>
-        <li>Process one-time payments and manage your linguil+ status using Stripe.</li>
-        <li>Analyse usage data via Google Analytics to monitor and improve application performance and the user experience.</li>
+        <li>Process one-time payments and manage your linguil+ status using Reddit Gold (via Stripe).</li>
+        <li>Analyse gameplay progression and optimise the user experience via Devvit Journeys.</li>
       </ul>
 
       <h2 className="text-2xl font-bold mt-6 mb-4">3. Sharing your information with third parties</h2>
       <p className="mb-4">We do not sell your personal data. We only share it with essential third-party service providers that perform services for us or on our behalf. These include:</p>
       <ul className="list-disc list-inside mb-4 pl-4">
-        <li><strong>Google / Firebase:</strong> We use Google services for user authentication, data storage (Firestore), hosting, and analytics (Google Analytics). When you use our app, you are providing information directly to Google as governed by their own privacy policy.</li>
-        <li><strong>Stripe:</strong> We use Stripe for payment processing. If you choose to upgrade to linguil+, we provide your email address to Stripe to create a customer record. We do not process or store your credit card details on our servers.</li>
+        <li><strong>Google / Firebase:</strong> We use Google services for user authentication, data storage (Firestore), and hosting. When you use our app, you are providing information directly to Google as governed by their own privacy policy.</li>
+        <li><strong>Reddit:</strong> The app runs on the Reddit Developer Platform (Devvit). Reddit manages UIDs, platform telemetry, Reddit Gold transactions, and gameplay analytics via Devvit Journeys.</li>
+        <li><strong>Stripe:</strong> Reddit uses Stripe for Reddit Gold payment processing. If you choose to upgrade to linguil+, Reddit provides your UID to Stripe to create a customer record. We do not process or store your financial or credit card details on our servers.</li>
       </ul>
 
       <h2 className="text-2xl font-bold mt-6 mb-4">4. Data security</h2>

@@ -14,7 +14,6 @@ import { telemetry } from '@devvit/analytics/client/reddit';
 
 // Dynamically import components to reduce the initial bundle size.
 const AuthButton = React.lazy(() => import('@/client/components/auth/AuthButton').then(mod => ({ default: mod.AuthButton })));
-const AnalyticsTracker = React.lazy(() => import('@/client/components/common/AnalyticsTracker').then(mod => ({ default: mod.AnalyticsTracker })));
 
 // Page Ccmponents for routing.
 const GamePage = React.lazy(() => import('@/client/app/game/page'));
@@ -113,9 +112,6 @@ function HomePage() {
                 </a>
             </Button>
         </div>
-        <React.Suspense fallback={null}>
-          <AnalyticsTracker />
-        </React.Suspense>
       </div>
     </ErrorBoundary>
   );

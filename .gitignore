@@ -46,3 +46,10 @@ firestore.rules
 
 # Misc
 src/shared/data
+
+# Antigravity agent configurations
+.agents/
+skills-lock.json
+AGENTS.md
+CLAUDE.md
+studio.json

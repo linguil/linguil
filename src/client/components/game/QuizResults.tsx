@@ -9,7 +9,7 @@ import { useAuth } from '@/client/hooks/use-auth';
 import { Share2, Lock, Unlock } from 'lucide-react';
 import { generateShareText } from '@/client/lib/utils';
 import { useToast } from '@/client/hooks/use-toast';
-import { PaymentMethodDialog } from '@/client/components/payments/PaymentMethodDialog';
+import { PaymentDialog } from '@/client/components/payments/PaymentDialog';
 
 // Displays the word's language statistics.
 const LanguageStatsDisplay = memo(({ languageStats, word }: { languageStats: LanguageStats | null, word: Word }) => {
@@ -53,7 +53,7 @@ const ScoreDisplay = memo(({ score, totalQuestions }: { score: number, totalQues
       messageEl.style.fontSize = ''; // Reset font size before calculating.
       const containerWidth = container.clientWidth;
       const messageWidth = messageEl.scrollWidth;
-      
+
       // If message overflows, reduce font size.
       if (messageWidth > containerWidth) {
         const initialFontSize = parseFloat(getComputedStyle(messageEl).fontSize);
@@ -160,7 +160,7 @@ const CallToActionButton = memo(({ hasPaid, startOfflineGame, signInWithReddit, 
           Unlock unlimited games
         </Button>
       )}
-      <PaymentMethodDialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog} onPurchaseSuccess={onPurchaseSuccess} />
+      <PaymentDialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog} onPurchaseSuccess={onPurchaseSuccess} />
     </>
   );
 });
@@ -191,15 +191,15 @@ type QuizResultsProps = {
 };
 
 // Displays quiz results, stats, and CTAs.
-const QuizResults = ({ 
-  score, 
-  totalQuestions, 
+const QuizResults = ({
+  score,
+  totalQuestions,
   questionResults,
-  word, 
-  languageStats, 
-  startOfflineGame, 
-  wordDisplay, 
-  gameModeToggleSwitch, 
+  word,
+  languageStats,
+  startOfflineGame,
+  wordDisplay,
+  gameModeToggleSwitch,
   darkModeToggleSwitch,
   isOfflineGame,
 }: QuizResultsProps) => {
@@ -231,12 +231,12 @@ const QuizResults = ({
     if (navigator.share) {
       try {
         await navigator.share({ title: 'linguil score', text: shareText });
-        return; 
+        return;
       } catch (err) {
         if ((err as Error).name === 'AbortError') return;
       }
-    } 
-    
+    }
+
     // Try modern clipboard API.
     try {
       await navigator.clipboard.writeText(shareText);
@@ -252,7 +252,7 @@ const QuizResults = ({
       <CardHeader className="text-center pb-0.5">
         <LanguageStatsDisplay languageStats={languageStats} word={word} />
       </CardHeader>
-      
+
       <CardContent className="text-center pt-2 relative">
         {wordDisplay}
         <div className="relative flex justify-center items-center mb-2">
@@ -277,7 +277,7 @@ const QuizResults = ({
         </div>
 
         <div className="flex justify-center items-center gap-2">
-          <CallToActionButton 
+          <CallToActionButton
             hasPaid={hasPaid}
             startOfflineGame={startOfflineGame}
             signInWithReddit={signInWithReddit}
@@ -285,8 +285,8 @@ const QuizResults = ({
             onPurchaseSuccess={fetchUserProfile}
           />
 
-            {!isOfflineGame && (
-              <>
+          {!isOfflineGame && (
+            <>
               {/* Fallback share box */}
               {showShareBox && (
                 <div className="absolute bottom-[4.5rem] right-6 z-50 bg-card text-center animate-in slide-in-from-bottom-2 fade-in duration-200">
@@ -311,7 +311,7 @@ const QuizResults = ({
                 <Share2 className="h-5 w-5" />
               </Button>
             </>
-            )}
+          )}
         </div>
       </CardContent>
     </Card>

@@ -30,5 +30,11 @@
     "firebase-tools": "^15.32.1",
     "typescript": "^7.0.2"
   },
-  "private": true
+  "private": true,
+  "allowScripts": {
+    "@firebase/util@1.15.3": true,
+    "@google/genai@2.27.0": true,
+    "protobufjs@7.6.6": true,
+    "re2@1.27.0": true
+  }
 }

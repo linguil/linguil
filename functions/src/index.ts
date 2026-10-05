@@ -7,6 +7,5 @@ export * from "./firestore-triggers";
 export { seedDailyWord } from "./seed";
 export * from "./auth-proxy";
 export * from "./reddit-auth";
-export * from "./analytics-proxy";
 export * from "./firestore-proxy";
 export * from "./discord-server-count";

@@ -50,8 +50,7 @@
     "target": "esnext",
     // Enables compatibility with CommonJS modules.
     "esModuleInterop": true,
-    // Explicitly list the @types packages you need for global types.
-    "types": ["node", "react", "react-dom", "js-cookie", "qrcode", "stripe", "body-parser"]
+    "types": ["node", "react", "react-dom", "js-cookie", "qrcode"]
   },
   // Specifies the files to be included in the compilation.
   "include": [
@@ -79,6 +78,7 @@
     "dist",
     "scripts",
     "schemas",
-    ".devvit"
+    ".devvit",
+    "function-kits"
   ]
 }

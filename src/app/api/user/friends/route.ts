@@ -33,11 +33,21 @@ export async function GET(req: NextRequest) {
         return NextResponse.json([]);
     }
 
-    // Fetch the public data for the user and their friends
+    // Fetch the public data for the user and their friends in chunks of 30 (Firestore 'in' limit).
     const usersPublicRef = db.collection('users_public');
-    const playerDocs = await usersPublicRef.where(FieldPath.documentId(), 'in', allUids).get();
+    const MAX_IN = 30;
+    const chunks: string[][] = [];
+    for (let i = 0; i < allUids.length; i += MAX_IN) {
+      chunks.push(allUids.slice(i, i + MAX_IN));
+    }
 
-    const playersData = playerDocs.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+    const chunkSnaps = await Promise.all(
+      chunks.map(chunk => usersPublicRef.where(FieldPath.documentId(), 'in', chunk).get())
+    );
+
+    const playersData = chunkSnaps.flatMap(snap =>
+      snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }))
+    );
 
     return NextResponse.json(playersData);
 

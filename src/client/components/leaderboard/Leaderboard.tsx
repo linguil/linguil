@@ -63,7 +63,7 @@ const Leaderboard = memo<LeaderboardProps>(({
       ? MOCK_SUCCESS_RATE_DATA
       : (players || []).map((player, index) => ({
           uid: player.uid,
-          name: player.displayName.split(' ')[0], // Use first name.
+          name: (player.displayName || 'Anonymous').split(' ')[0], // Use first name.
           'Success Rate': player.scores && player.scores.totalAnswered > 0
             ? Math.round((player.scores.totalCorrect / player.scores.totalAnswered) * 100)
             : 0,
@@ -82,7 +82,7 @@ const Leaderboard = memo<LeaderboardProps>(({
       ? MOCK_COMPARISON_DATA
       : (players || []).map((player) => ({
           uid: player.uid,
-          name: player.displayName.split(' ')[0],
+          name: (player.displayName || 'Anonymous').split(' ')[0],
           correct: player.scores ? player.scores.totalCorrect : 0,
           perfect: player.scores ? player.scores.perfectScores : 0,
         }));

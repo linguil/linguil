@@ -24,7 +24,19 @@ export const getDiscordSdk = (): Promise<DiscordSDK | null> => {
           try {
             const { DiscordSDK: DiscordSDKConstructor } = await import('@discord/embedded-app-sdk');
             const sdk = new DiscordSDKConstructor(process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID!);
-            await sdk.ready();
+
+            // Race sdk.ready() against a timeout to prevent hanging indefinitely on iOS WKWebView / mobile.
+            const isReady = await Promise.race([
+              sdk.ready().then(() => true),
+              new Promise<boolean>((res) => setTimeout(() => res(false), 4000)),
+            ]);
+
+            if (!isReady) {
+              console.warn("Discord SDK ready() timed out; continuing without Discord SDK.");
+              resolve(null);
+              return;
+            }
+
             resolve(sdk);
           } catch (e) {
             console.error("Discord SDK initialization failed inside the promise:", e);

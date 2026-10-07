@@ -148,46 +148,46 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
   const signInWithDiscord = useCallback(async (): Promise<void> => {
     clearAuthError();
     setLoading(true);
-    
+
     try {
-        const { handleSignInWithDiscord } = await import('@/lib/discord-auth');
-        
-        const response = await handleSignInWithDiscord();
+      const { handleSignInWithDiscord } = await import('@/lib/discord-auth');
 
-        if (!response) {
-          setLoading(false);
-          return;
+      const response = await handleSignInWithDiscord();
+
+      if (!response) {
+        setLoading(false);
+        return;
+      }
+
+      if ('user' in response) {
+        // Discord Client authentication: set user data and then set the activity.
+        const clientAuth = response as DiscordClientAuthResponse;
+
+        // Manually set the cookie and the React state.
+        Cookies.set(FIREBASE_ID_TOKEN_COOKIE, clientAuth.idToken, { expires: 1, secure: true, sameSite: 'none' });
+        sessionStorage.setItem('discord_auth_cache', JSON.stringify({ idToken: clientAuth.idToken }));
+
+        // Manually mock the Firebase User object to satisfy the context type.
+        setUser({
+          uid: clientAuth.user.uid,
+          displayName: clientAuth.user.displayName,
+          photoURL: clientAuth.user.photoURL
+        } as User);
+
+        setDiscordClientUser(clientAuth.user);
+        setHasPaid(clientAuth.hasPaid);
+
+        const { getDiscordSdk, setDiscordActivity } = await import('@/lib/discord');
+        const sdk = await getDiscordSdk();
+        if (sdk) {
+          await setDiscordActivity(sdk);
         }
-
-        if ('user' in response) {
-          // Discord Client authentication: set user data and then set the activity.
-          const clientAuth = response as DiscordClientAuthResponse;
-            
-          // Manually set the cookie and the React state.
-          Cookies.set(FIREBASE_ID_TOKEN_COOKIE, clientAuth.idToken, { expires: 1, secure: true, sameSite: 'none' });
-          sessionStorage.setItem('discord_auth_cache', JSON.stringify({ idToken: clientAuth.idToken }));
-          
-          // Manually mock the Firebase User object to satisfy the context type.
-          setUser({ 
-              uid: clientAuth.user.uid, 
-              displayName: clientAuth.user.displayName, 
-              photoURL: clientAuth.user.photoURL 
-          } as User); 
-
-          setDiscordClientUser(clientAuth.user);
-          setHasPaid(clientAuth.hasPaid);
-            
-          const { getDiscordSdk, setDiscordActivity } = await import('@/lib/discord');
-          const sdk = await getDiscordSdk();
-          if (sdk) {
-              await setDiscordActivity(sdk);
-          }
-        }
+      }
 
     } catch (error: any) {
-        handleAuthError(error);
+      handleAuthError(error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }, [clearAuthError, handleAuthError]);
 
@@ -199,40 +199,47 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
     setIsInsideDiscord(inDiscord);
 
     let unsubscribe: (() => void) | undefined;
+    let discordSafetyTimeout: NodeJS.Timeout | undefined;
 
     if (inDiscord) {
       // 1. Discord
+      // Safety timeout: ensure loading state is cleared if Discord handshake or network stalls.
+      discordSafetyTimeout = setTimeout(() => {
+        setLoading(false);
+      }, 7000);
+
       const silentSignIn = async () => {
-          try {
-              const { handleSilentSignIn } = await import('@/lib/discord-auth');
-              const authResponse = await handleSilentSignIn();
+        try {
+          const { handleSilentSignIn } = await import('@/lib/discord-auth');
+          const authResponse = await handleSilentSignIn();
 
-              if (authResponse) {
-                  Cookies.set(FIREBASE_ID_TOKEN_COOKIE, authResponse.idToken, { expires: 1, secure: true, sameSite: 'none' });
-                  sessionStorage.setItem('discord_auth_cache', JSON.stringify({ idToken: authResponse.idToken }));
-                  setUser({ 
-                      uid: authResponse.user.uid, 
-                      displayName: authResponse.user.displayName, 
-                      photoURL: authResponse.user.photoURL 
-                  } as User);
+          if (authResponse) {
+            Cookies.set(FIREBASE_ID_TOKEN_COOKIE, authResponse.idToken, { expires: 1, secure: true, sameSite: 'none' });
+            sessionStorage.setItem('discord_auth_cache', JSON.stringify({ idToken: authResponse.idToken }));
+            setUser({
+              uid: authResponse.user.uid,
+              displayName: authResponse.user.displayName,
+              photoURL: authResponse.user.photoURL
+            } as User);
 
-                  setDiscordClientUser(authResponse.user);
-                  setHasPaid(authResponse.hasPaid);
+            setDiscordClientUser(authResponse.user);
+            setHasPaid(authResponse.hasPaid);
 
-                  const { getDiscordSdk, setDiscordActivity } = await import('@/lib/discord');
-                  const sdk = await getDiscordSdk();
-                  if (sdk) {
-                      await setDiscordActivity(sdk);
-                  }
-              }
-          } catch (error) {
-              console.error("An unexpected error occurred during Discord silent sign-in:", error);
-          } finally {
-              setLoading(false);
+            const { getDiscordSdk, setDiscordActivity } = await import('@/lib/discord');
+            const sdk = await getDiscordSdk();
+            if (sdk) {
+              await setDiscordActivity(sdk);
+            }
           }
+        } catch (error) {
+          console.error("An unexpected error occurred during Discord silent sign-in:", error);
+        } finally {
+          if (discordSafetyTimeout) clearTimeout(discordSafetyTimeout);
+          setLoading(false);
+        }
       };
       silentSignIn();
-      
+
     } else {
       // 2. Browser
       const initializeAuth = async () => {
@@ -240,7 +247,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
           const { getFirebaseAuth } = await import('@/lib/firebase/firebase');
           const { onIdTokenChanged } = await import('firebase/auth');
           const auth = await getFirebaseAuth();
-          
+
           unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
             if (currentUser) {
               const idTokenResult = await currentUser.getIdTokenResult();
@@ -256,7 +263,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
                   setUserId(analytics, currentUser.uid);
                   setUserProperties(analytics, { has_paid: paidStatus });
                 }
-              } catch {}
+              } catch { }
             } else {
               setUser(null);
               setHasPaid(false);
@@ -275,6 +282,9 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
     }
 
     return () => {
+      if (discordSafetyTimeout) {
+        clearTimeout(discordSafetyTimeout);
+      }
       if (unsubscribe) {
         unsubscribe();
       }
@@ -310,13 +320,13 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
           }
 
           if (!token) {
-             const cache = sessionStorage.getItem('discord_auth_cache');
-             if (cache) {
-                 try {
-                   const parsed = JSON.parse(cache);
-                   token = parsed.idToken;
-                 } catch (_e) {}
-             }
+            const cache = sessionStorage.getItem('discord_auth_cache');
+            if (cache) {
+              try {
+                const parsed = JSON.parse(cache);
+                token = parsed.idToken;
+              } catch (_e) { }
+            }
           }
 
           if (token === 'undefined') token = undefined;
@@ -328,7 +338,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
               'x-auth-token': token
             }
           });
-          
+
           if (response.ok && isSubscribed) {
             const data = await response.json();
             if (hasPaid !== data.hasPaid) {
@@ -377,7 +387,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
               }
             }
           });
-          
+
           // Add the unsubscribe function to the sign-out cleanup.
           addSignOutCleanup(unsubscribe);
         } catch {
@@ -386,7 +396,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
       };
       initializeFirestore();
 
-    // Cleanup the listener on component unmount or when the user changes.
+      // Cleanup the listener on component unmount or when the user changes.
       return () => {
         if (unsubscribe) {
           unsubscribe();
@@ -426,7 +436,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
             if (data.status === 'completed') {
               clearInterval(pollingIntervalRef.current!);
               setIsGooglePolling(false);
-              
+
               // If login is successful, apply credentials locally.
               Cookies.set(FIREBASE_ID_TOKEN_COOKIE, data.idToken, { expires: 1, secure: true, sameSite: 'none' });
               setUser(data.user as User);
@@ -554,10 +564,10 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({ name, email, password, leadId })
         });
         const createData = await createRes.json();
-        
+
         if (!createRes.ok) {
           const errMsg = typeof createData.error === 'string' ? createData.error : createData.error?.message || "Failed to create user account.";
-          throw new Error(errMsg); 
+          throw new Error(errMsg);
         }
 
         // 2. Exchange custom token for an ID token securely via backend proxy.
@@ -567,7 +577,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({ token: createData.token })
         });
         const exchangeData = await exchangeRes.json();
-        
+
         if (!exchangeRes.ok) {
           throw new Error(exchangeData.code || "Failed to finalise authentication.");
         }
@@ -625,7 +635,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
       // Run all registered cleanup functions.
       signOutCleanup.current.forEach((cleanup) => cleanup());
       signOutCleanup.current = [];
-      
+
       if (isInsideDiscord) {
         // Clear Discord local state and session cookie.
         setDiscordClientUser(null);

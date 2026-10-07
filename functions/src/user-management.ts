@@ -139,28 +139,53 @@ const persistRegistrationTracking = async (
 const setupNewUser = async (user: UserRecord) => {
   const userPublicDocRef = db.collection("users_public").doc(user.uid);
   const userDocRef = db.collection("users").doc(user.uid);
-  const doc = await userPublicDocRef.get();
 
-  // Only proceed if the user's public document does not already exist.
-  if (!doc.exists) {
-    // Get a new write batch
-    const batch = db.batch();
+  const [publicDoc, userDoc] = await Promise.all([
+    userPublicDocRef.get(),
+    userDocRef.get(),
+  ]);
 
-    // Create a new Stripe customer.
+  // If already fully setup, exit early to avoid duplicate work.
+  if (publicDoc.exists && userDoc.exists && userDoc.data()?.stripeCustomerId) {
+    return;
+  }
+
+  let stripeCustomerId = userDoc.data()?.stripeCustomerId;
+  if (!stripeCustomerId) {
     const stripe = getStripe();
-    const customer = await stripe.customers.create({
-      email: user.email,
-      metadata: { firebaseUID: user.uid },
-    });
+    try {
+      // Check if customer already exists for this UID to avoid duplicates under concurrent invocations
+      const existingCustomers = await stripe.customers.search({
+        query: `metadata['firebaseUID']:'${user.uid}'`,
+      });
+      if (existingCustomers.data && existingCustomers.data.length > 0) {
+        stripeCustomerId = existingCustomers.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: { firebaseUID: user.uid },
+        });
+        stripeCustomerId = customer.id;
+      }
+    } catch (stripeErr) {
+      console.error(`Error resolving Stripe customer for UID ${user.uid}:`, stripeErr);
+    }
+  }
 
-    // Set the private user document.
-    batch.set(userDocRef, {
-      stripeCustomerId: customer.id,
-      email: user.email,
-      hasPaid: false,
-    }, { merge: true });
+  const batch = db.batch();
 
-    // Set the public user document.
+  // Set the private user document.
+  const userUpdates: Record<string, any> = {
+    email: user.email,
+    hasPaid: userDoc.data()?.hasPaid ?? false,
+  };
+  if (stripeCustomerId) {
+    userUpdates.stripeCustomerId = stripeCustomerId;
+  }
+  batch.set(userDocRef, userUpdates, { merge: true });
+
+  // Set the public user document if not already created.
+  if (!publicDoc.exists) {
     batch.set(userPublicDocRef, {
       displayName: user.displayName || null,
       photoURL: user.photoURL || null,
@@ -171,11 +196,10 @@ const setupNewUser = async (user: UserRecord) => {
         totalCorrect: 0,
       },
       createdAt: FieldValue.serverTimestamp(),
-    });
-
-    // Commit the batch
-    await batch.commit();
+    }, { merge: true });
   }
+
+  await batch.commit();
 };
 
 // Background trigger (v1) to set up a new user.
@@ -286,7 +310,7 @@ export const trackSocialRegistration = onCall(
     const uid = request.auth.uid;
     const email = request.auth.token.email;
     const { fbc, fbp, leadId } = request.data;
-    
+
     // onCall functions provide IP and User Agent in the raw request context.
     const clientIp = request.rawRequest.ip;
     const userAgent = request.rawRequest.headers["user-agent"];

@@ -22,18 +22,28 @@ export const addFriendsRoute = (app: Hono) => {
         return c.json([]);
       }
 
-      // 2. Fetch the public data for all UIDs in a single batch query.
-      const constraints = {
-        where: {
-          fieldFilter: {
-            field: { fieldPath: '__name__' },
-            op: 'IN',
-            value: { arrayValue: { values: allUids.map(id => ({ referenceValue: `users_public/${id}`})) } },
-          },
-        },
-      };
+      // 2. Fetch the public data for all UIDs in batch queries of up to 30.
+      const MAX_IN = 30;
+      const chunks: string[][] = [];
+      for (let i = 0; i < allUids.length; i += MAX_IN) {
+        chunks.push(allUids.slice(i, i + MAX_IN));
+      }
 
-      const playersData = await restQuery('users_public', constraints);
+      const chunkResults = await Promise.all(
+        chunks.map(chunk =>
+          restQuery('users_public', {
+            where: {
+              fieldFilter: {
+                field: { fieldPath: '__name__' },
+                op: 'IN',
+                value: { arrayValue: { values: chunk.map(id => ({ referenceValue: `users_public/${id}` })) } },
+              },
+            },
+          })
+        )
+      );
+
+      const playersData = chunkResults.flat();
 
       return c.json(playersData);
     } catch (error: any) {

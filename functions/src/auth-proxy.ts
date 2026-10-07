@@ -1,6 +1,5 @@
 import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
-import fetch from "node-fetch";
 
 // Proxies authentication requests from Devvit to the Google Identity Toolkit API.
 export const authProxy = onRequest({ cors: true, region: "us-central1" }, async (req, res) => {

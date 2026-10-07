@@ -10,8 +10,7 @@
       "source": "functions",
       "codebase": "default",
       "predeploy": [
-        "rm -rf functions/data && cp -r public/data functions/data",
-        "rm -rf src/shared/data && cp -r public/data src/shared/data",
+        "node scripts/sync-data.js",
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ],
       "ignore": [
@@ -22,7 +21,8 @@
         "*.log",
         "src/**",
         "tsconfig.json",
-        "eslint.config.js"
+        "eslint.config.js",
+        ".runtimeconfig.json"
       ]
     },
     {
@@ -42,15 +42,29 @@
     }
   ],
   "storage": {
-    "rules": "storage.rules"
+    "rules": "storage.rules",
+    "bucket": "linguil.firebasestorage.app"
   },
   "hosting": {
-    "source": ".",
+    "public": "public",
     "ignore": [
       "firebase.json",
+      "**/.*",
       "**/node_modules/**",
       "functions/**",
       "apphosting.yaml"
     ]
+  },
+  "apphosting": {
+    "backendId": "studio",
+    "rootDir": "/",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "functions"
+    ],
+    "alwaysDeployFromSource": true
   }
 }

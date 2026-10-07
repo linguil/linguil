@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useRef, useLayoutEffect, useEffect } from 'react';
+import { memo, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -55,7 +55,7 @@ const WordDisplay = memo<WordDisplayProps>(({ word, isOfflineGame, isAudioReady,
   };
 
   // Adjust font on render, word changes, and window resize.
-  useLayoutEffect(() => {
+  useEffect(() => {
     // A small timeout ensures the DOM is fully updated before we measure.
     const timer = setTimeout(() => adjustFontSize(), 0);
     return () => clearTimeout(timer);

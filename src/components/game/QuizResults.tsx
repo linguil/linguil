@@ -3,7 +3,7 @@
 import type { LanguageStats, Word } from "@/types/index";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState, useEffect, useRef, memo, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import type { ReactNode } from 'react';
 import { useAuth } from "@/hooks/use-auth";
 import { Share2, Lock, Unlock } from 'lucide-react';
@@ -89,8 +89,8 @@ const ScoreDisplay = memo(({ score, totalQuestions }: { score: number, totalQues
     }
   };
 
-  // Adjust font size before browser paint.
-  useLayoutEffect(() => {
+  // Adjust font size on render and message change.
+  useEffect(() => {
     adjustFontSize();
   }, [message]);
 

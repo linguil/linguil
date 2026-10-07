@@ -63,26 +63,54 @@ export function parseWord(wordString: string): { nativeScript: string; translite
   return { nativeScript: trimmedWord, transliteration: trimmedWord };
 }
 
-// Generates a deterministic pseudo-random number between 0 and 1 based on a given seed.
-function seededRandom(seed: number) {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
+// Hash a string into a 32-bit unsigned integer using cyrb53.
+export function hashString(str: string, seed = 0): number {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c64e6d ^ seed;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (h2 >>> 0) ^ (h1 >>> 0);
 }
 
-// Shuffles an array in a deterministic way using a given seed.
-export function shuffleArray<T>(array: T[], seed: number): T[] {
+// Creates a deterministic pseudo-random number generator (Mulberry32).
+export function createSeededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function resolveRng(rngOrSeed: number | (() => number)): () => number {
+  if (typeof rngOrSeed === "function") {
+    return rngOrSeed;
+  }
+  return createSeededRandom(rngOrSeed);
+}
+
+// Shuffles an array in a deterministic way using a given PRNG or seed.
+export function shuffleArray<T>(array: T[], rngOrSeed: number | (() => number)): T[] {
+  const rng = resolveRng(rngOrSeed);
   const shuffled = [...array]; // Create a shallow copy of the array.
   // Use the Fisher-Yates shuffle algorithm with the seeded random number generator.
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(seededRandom(seed + i) * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
 }
 
-// Selects a random item from an array in a deterministic way using a given seed.
-export function getRandomItem<T>(data: T[], seed: number): T | undefined {
+// Selects a random item from an array in a deterministic way using a given PRNG or seed.
+export function getRandomItem<T>(data: T[], rngOrSeed: number | (() => number)): T | undefined {
   if (!data || data.length === 0) return undefined;
-  const randomIndex = Math.floor(seededRandom(seed) * data.length);
+  const rng = resolveRng(rngOrSeed);
+  const randomIndex = Math.floor(rng() * data.length);
   return data[randomIndex];
 }

@@ -160,54 +160,142 @@ export const getOfflineQuizData = async (retries = MAX_RETRIES): Promise<{
     langCode: correctLangCode,
   };
 
-  // Question 1: Language family.
+  // Identify other languages that use the exact same word (transliteration and native script).
+  const targetTranslit = (randomWord.transliteration || '').trim().toLowerCase();
+  const targetNative = (randomWord.nativeScript || '').trim().toLowerCase();
+
+  const conflictingFamilies = new Set<string>();
+  const duplicateWordSameFamilyLangs = new Set<string>();
+  const conflictingTranslations = new Set<string>([correctTranslation]);
+
+  data.words.forEach(w => {
+    const wTranslit = (w.transliteration || '').trim().toLowerCase();
+    const wNative = (w.nativeScript || '').trim().toLowerCase();
+    const isMatch =
+      wNative === targetNative &&
+      wTranslit === targetTranslit;
+
+    if (isMatch) {
+      if (w.language === correctLanguage) {
+        if (w.translation) conflictingTranslations.add(w.translation);
+      } else {
+        const otherFamily = data.familiesMap.get(w.language)?.family;
+        if (otherFamily) {
+          if (otherFamily === correctFamily) {
+            duplicateWordSameFamilyLangs.add(w.language);
+          } else {
+            conflictingFamilies.add(otherFamily);
+          }
+        }
+      }
+    }
+  });
+
+  // Generate distractor options for question 1 (language family), prioritising same region, avoiding cross-language homonyms.
   const sameRegionFamilies = languageRegion ? data.familiesByRegion.get(languageRegion) || [] : [];
-  const familyDistractorPool = [
-    ...new Set(sameRegionFamilies.filter(f => f !== correctFamily)),
-    ...new Set(data.allFamilies.filter(f => f !== correctFamily))
-  ];
-  const familyDistractors = getUniqueRandomItems(familyDistractorPool, 3, [], seed + 1);
+  const eligibleSameRegion = sameRegionFamilies.filter(f => f !== correctFamily && !conflictingFamilies.has(f));
+  const shuffledSameRegion = deterministicShuffle([...new Set(eligibleSameRegion)], seed + 1);
+  const familyDistractors = shuffledSameRegion.slice(0, 3);
+
+  if (familyDistractors.length < 3) {
+    const usedFamilies = new Set([correctFamily, ...conflictingFamilies, ...familyDistractors]);
+    const eligibleOther = data.allFamilies.filter(f => !usedFamilies.has(f));
+    const shuffledOther = deterministicShuffle([...new Set(eligibleOther)], seed + 1.1);
+    familyDistractors.push(...shuffledOther.slice(0, 3 - familyDistractors.length));
+  }
+
+  if (familyDistractors.length < 3) {
+    const fallbackFamilies = data.allFamilies.filter(f => f !== correctFamily && !familyDistractors.includes(f));
+    const shuffledFallback = deterministicShuffle([...new Set(fallbackFamilies)], seed + 1.2);
+    familyDistractors.push(...shuffledFallback.slice(0, 3 - familyDistractors.length));
+  }
+
   const familyOptions = [correctFamily, ...familyDistractors];
   const question1: Question = {
     type: 'family',
     prompt: 'Which language family is this word from?',
     correctAnswer: correctFamily,
-    options: deterministicShuffle(familyOptions, seed + 2),
+    options: deterministicShuffle([...new Set(familyOptions)], seed + 2),
   };
 
-  // Question 2: Language.
-  const ambiguousLangs = data.ambiguousWordsMap.get(correctTranslation)?.get(randomWord.transliteration) || [];
-  const sameFamilyLangs = data.languagesByFamilyMap.get(correctFamily) || [];
-  const sameRegionLanguages = languageRegion ? data.languagesByRegion.get(languageRegion) || [] : [];
+  // Generate distractor options for question 2 (language), prioritising same family and region, avoiding cross-language homonyms in the same family.
+  const usedLangs = new Set<string>([correctLanguage, ...duplicateWordSameFamilyLangs]);
+  const langDistractors: string[] = [];
 
-  const sameFamilyDistractors = sameFamilyLangs.filter(lang => !ambiguousLangs.includes(lang) && lang !== correctLanguage);
-  const sameRegionDistractors = sameRegionLanguages.filter(lang => !ambiguousLangs.includes(lang) && lang !== correctLanguage);
-  const otherFamilyDistractors = data.allLanguages.filter(lang => !sameFamilyLangs.includes(lang) && !ambiguousLangs.includes(lang) && lang !== correctLanguage);
+  // Tier 1: Same family
+  const sameFamilyLangs = (data.languagesByFamilyMap.get(correctFamily) || []).filter(l => !usedLangs.has(l));
+  const shuffledSameFamily = deterministicShuffle([...new Set(sameFamilyLangs)], seed + 3);
+  for (const lang of shuffledSameFamily) {
+    if (langDistractors.length >= 3) break;
+    langDistractors.push(lang);
+    usedLangs.add(lang);
+  }
 
-  const priorityPool = deterministicShuffle(
-    [...new Set(sameFamilyDistractors.concat(sameRegionDistractors))],
-    seed + 3
-  );
-  const otherPool = deterministicShuffle([...new Set(otherFamilyDistractors)], seed + 3.1);
-  const combinedPool = [...new Set([...priorityPool, ...otherPool])];
-  const langDistractors = combinedPool.slice(0, 3);
+  // Tier 2: Same region
+  if (langDistractors.length < 3) {
+    const sameRegionLangs = (languageRegion ? data.languagesByRegion.get(languageRegion) || [] : []).filter(l => !usedLangs.has(l));
+    const shuffledSameRegion = deterministicShuffle([...new Set(sameRegionLangs)], seed + 3.1);
+    for (const lang of shuffledSameRegion) {
+      if (langDistractors.length >= 3) break;
+      langDistractors.push(lang);
+      usedLangs.add(lang);
+    }
+  }
+
+  // Tier 3: Other families
+  if (langDistractors.length < 3) {
+    const otherLangs = data.allLanguages.filter(l => !usedLangs.has(l));
+    const shuffledOther = deterministicShuffle([...new Set(otherLangs)], seed + 3.2);
+    for (const lang of shuffledOther) {
+      if (langDistractors.length >= 3) break;
+      langDistractors.push(lang);
+      usedLangs.add(lang);
+    }
+  }
+
+  if (langDistractors.length < 3) {
+    const fallbackLangs = data.allLanguages.filter(l => l !== correctLanguage && !langDistractors.includes(l));
+    const shuffledFallback = deterministicShuffle([...new Set(fallbackLangs)], seed + 3.3);
+    for (const lang of shuffledFallback) {
+      if (langDistractors.length >= 3) break;
+      langDistractors.push(lang);
+    }
+  }
 
   const languageOptions = [correctLanguage, ...langDistractors];
   const question2: Question = {
     type: 'language',
     prompt: `Which ${correctFamily} language is this word from?`,
     correctAnswer: correctLanguage,
-    options: deterministicShuffle(languageOptions, seed + 5),
+    options: deterministicShuffle([...new Set(languageOptions)], seed + 5),
   };
 
-  // Question 3: English translation.
-  const translationOptions = [correctTranslation, ...getUniqueRandomItems(data.allTranslations, 3, [correctTranslation], seed + 6)];
+  // Generate distractor options for question 3 (English translation), avoiding homonyms.
+  const eligibleTranslations = data.allTranslations.filter(t => !conflictingTranslations.has(t));
+  const translationDistractors = getUniqueRandomItems(eligibleTranslations, 3, [], seed + 6);
+  if (translationDistractors.length < 3) {
+    const fallbackTranslations = data.allTranslations.filter(t => t !== correctTranslation && !translationDistractors.includes(t));
+    const extraTranslations = getUniqueRandomItems(fallbackTranslations, 3 - translationDistractors.length, [], seed + 6.1);
+    translationDistractors.push(...extraTranslations);
+  }
+  const translationOptions = [correctTranslation, ...translationDistractors];
   const question3: Question = {
     type: 'translation',
     prompt: 'What is the English translation of this word?',
     correctAnswer: correctTranslation,
-    options: deterministicShuffle(translationOptions, seed + 7),
+    options: deterministicShuffle([...new Set(translationOptions)], seed + 7),
   };
+
+  // Validate that there are enough options for each question.
+  if (
+    [...new Set(familyOptions)].length < 2 ||
+    [...new Set(languageOptions)].length < 2 ||
+    [...new Set(translationOptions)].length < 2
+  ) {
+    if (retries > 0) {
+      return getOfflineQuizData(retries - 1);
+    }
+  }
 
   // Compile the final language statistics object.
   const languageStats = langStatsRecord ? { 

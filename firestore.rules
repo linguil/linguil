@@ -11,8 +11,15 @@ service cloud.firestore {
 
     // Defines rules for private user data and subcollections.
     match /users/{userId} {
-      // A user can only read and write to their own document.
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // A user can read their own document.
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Users cannot grant themselves linguil+ (hasPaid) or modify stripeCustomerId.
+      allow create: if request.auth != null && request.auth.uid == userId
+                    && !request.resource.data.keys().hasAny(['hasPaid', 'stripeCustomerId']);
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['hasPaid', 'stripeCustomerId']);
+      allow delete: if false;
 
       // Defines rules for a user's daily scores.
       match /dailyScores/{dailyScoreId} {
@@ -34,7 +41,7 @@ service cloud.firestore {
       // Any authenticated user can read public profiles.
       allow read: if request.auth != null;
 
-      // Profile creation is handled by the server.
+      // Profile creation is strictly server-only.
       allow create: if false;
 
       // A user can only update their own displayName.
@@ -47,11 +54,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Allows public read for polling, but write access is restricted by a secret.
+    // Auth sessions are strictly server-only via Admin SDK.
     match /_auth_sessions/{sessionId} {
-        allow read: if true;
-        allow create, update: if request.resource.data.writeSecret == '182a578c735d496a843aa58267258a3e0b8a3c5d7f0e9a1b3c5d7f0e9a1b3c5d';
-        allow delete: if false;
+      allow read, write: if false;
+    }
+
+    // Discord bot server data and metrics are strictly server-only via Admin SDK.
+    match /discord_guilds/{guildId}/{document=**} {
+      allow read, write: if false;
+    }
+    match /discord_metrics/{metricId} {
+      allow read, write: if false;
     }
   }
 }

@@ -53,7 +53,7 @@ const useFriends = (currentUserStats: PlayerStats | null) => {
 
       // Extract friend's first name.
       const friendData = friendDoc.data() as PlayerStats;
-      const firstName = friendData.displayName.split(' ')[0];
+      const firstName = (friendData.displayName || 'Anonymous').split(' ')[0];
 
       // Check if they are already friends.
       if (currentData.friends && currentData.friends.includes(friendUid)) {

@@ -1,66 +1,66 @@
-Language,langCode,googleTtsVoice
-Amharic,en-US,en-US-Chirp3-HD-Zubenelgenubi
-Egyptian Arabic,ar-XA,ar-XA-Chirp3-HD-Achernar
-Hausa,ar-XA,ar-XA-Chirp3-HD-Iapetus
-Levantine Arabic,ar-XA,ar-XA-Chirp3-HD-Achird
-Modern Standard Arabic,ar-XA,ar-XA-Chirp3-HD-Algenib
-Sudanese Arabic,ar-XA,ar-XA-Chirp3-HD-Algieba
-Vietnamese,vi-VN,vi-VN-Chirp3-HD-Achernar
-Indonesian,id-ID,id-ID-Chirp3-HD-Achernar
-Javanese,id-ID,id-ID-Chirp3-HD-Achird
-Tagalog,fil-PH,fil-ph-Neural2-A
-Kannada,kn-IN,kn-IN-Chirp3-HD-Achernar
-Tamil,ta-IN,ta-IN-Chirp3-HD-Achernar
-Telugu,te-IN,te-IN-Chirp3-HD-Achernar
-Bengali,bn-IN,bn-IN-Chirp3-HD-Achernar
-Bhojpuri,hi-IN,hi-IN-Chirp3-HD-Achird
-English,en-GB,en-GB-Chirp3-HD-Achernar
-French,fr-FR,fr-FR-Chirp3-HD-Achernar
-Gujarati,gu-IN,gu-IN-Chirp3-HD-Achernar
-Hindi,hi-IN,hi-IN-Chirp3-HD-Achernar
-Persian,ur-IN,ur-IN-Chirp3-HD-Achernar
-Italian,it-IT,it-IT-Chirp3-HD-Achernar
-Marathi,mr-IN,mr-IN-Chirp3-HD-Achernar
-Portuguese,pt-BR,pt-BR-Chirp3-HD-Achernar
-Russian,ru-RU,ru-RU-Chirp3-HD-Aoede
-Spanish,es-ES,es-ES-Chirp3-HD-Achernar
-German,de-DE,de-DE-Chirp3-HD-Achernar
-Urdu,ur-IN,ur-IN-Chirp3-HD-Algenib
-Punjabi,ur-IN,ur-IN-Chirp3-HD-Achird
-Japanese,ja-JP,ja-JP-Chirp3-HD-Achernar
-Korean,ko-KR,ko-KR-Chirp3-HD-Achernar
-Thai,th-TH,th-TH-Chirp3-HD-Achernar
-Swahili,ar-XA,ar-XA-Chirp3-HD-Kore
-Mandarin,cmn-CN,cmn-CN-Chirp3-HD-Achernar
-Wu,cmn-CN,cmn-CN-Chirp3-HD-Achird
-Yue,yue-HK,yue-HK-Chirp3-HD-Achernar
-Turkish,tr-TR,tr-TR-Chirp3-HD-Achernar
-Hungarian,hu-HU,hu-HU-Chirp3-HD-Iapetus
-Basque,eu-ES,eu-ES-Standard-B
-Finnish,fi-FI,fi-FI-Chirp3-HD-Aoede
-Estonian,et-EE,et-EE-Chirp3-HD-Aoede
-Czech,cs-CZ,cs-CZ-Chirp3-HD-Achernar
-Slovak,sk-SK,sk-SK-Chirp3-HD-Kore
-Hmong,vi-VN,vi-VN-Chirp3-HD-Achird
-Polish,pl-PL,pl-PL-Chirp3-HD-Achernar
-Lingala,en-US,en-US-Chirp3-HD-Zubenelgenubi
-Igbo,en-US,en-US-Chirp3-HD-Zubenelgenubi
-Yoruba,en-US,en-US-Chirp3-HD-Zubenelgenubi
-Malay,ms-MY,ms-MY-Wavenet-A
-Sundanese,ms-MY,ms-MY-Wavenet-B
-Northern Uzbek,tr-TR,tr-TR-Chirp3-HD-Achird
-Algerian Arabic,ar-XA,ar-XA-Chirp3-HD-Erinome
-Moroccan Arabic,ar-XA,ar-XA-Chirp3-HD-Aoede
-Sindhi,ur-IN,ur-IN-Chirp3-HD-Algieba
-Saraiki,ur-IN,ur-IN-Chirp3-HD-Alnilam
-Jin,cmn-CN,cmn-CN-Chirp3-HD-Algenib
-Min Nan,yue-HK,yue-HK-Chirp3-HD-Achird
-Hakka,cmn-CN,cmn-CN-Chirp3-HD-Algieba
-Xiang,cmn-CN,cmn-CN-Chirp3-HD-Alnilam
-Mongolian,tr-TR,tr-TR-Chirp3-HD-Algenib
-Burmese,id-ID,id-ID-Chirp3-HD-Algenib
-Odia,en-IN,en-IN-Chirp-HD-D
-Nepali,hi-IN,hi-IN-Chirp3-HD-Algenib
-Malayalam,ml-IN,ml-IN-Chirp3-HD-Achernar
-Ukrainian,uk-UA,uk-UA-Chirp3-HD-Achernar
-Greek,el-GR,el-GR-Chirp3-HD-Zephyr
+Language,langCode,regionCode,accent
+Amharic,am-ET,ET,
+Egyptian Arabic,ar-EG,EG,Egyptian
+Hausa,ha-NG,NG,
+Levantine Arabic,ar-XA,LB,Levantine
+Modern Standard Arabic,ar-XA,EG,Modern Standard
+Sudanese Arabic,ar-XA,SD,Sudanese
+Vietnamese,vi-VN,VN,
+Indonesian,id-ID,ID,
+Javanese,jv-ID,ID,
+Tagalog,fil-PH,PH,
+Kannada,kn-IN,IN,
+Tamil,ta-IN,IN,
+Telugu,te-IN,IN,
+Bengali,bn-BD,BD,
+Bhojpuri,bho-IN,IN,Bhojpuri
+English,en-GB,GB,British
+French,fr-FR,FR,
+Gujarati,gu-IN,IN,
+Hindi,hi-IN,IN,
+Persian,fa-IR,IR,
+Italian,it-IT,IT,
+Marathi,mr-IN,IN,
+Portuguese,pt-BR,BR,
+Russian,ru-RU,RU,
+Spanish,es-ES,ES,
+German,de-DE,DE,
+Urdu,ur-PK,PK,
+Punjabi,pa-PK,PK,Western Punjabi
+Japanese,ja-JP,JP,
+Korean,ko-KR,KR,
+Thai,th-TH,TH,
+Swahili,sw-KE,KE,
+Mandarin,zh-Hant,CN,Mandarin
+Wu,zh-Hant,CN,Wu
+Yue,yue-HK,HK,Cantonese
+Turkish,tr-TR,TR,
+Hungarian,hu-HU,HU,
+Basque,eu-ES,ES,
+Finnish,fi-FI,FI,
+Estonian,et-EE,EE,
+Czech,cs-CZ,CZ,
+Slovak,sk-SK,SK,
+Hmong,vi-VN,VN,Hmong
+Polish,pl-PL,PL,
+Lingala,ln-CD,CD,
+Igbo,ig-NG,NG,
+Yoruba,yo-NG,NG,
+Malay,ms-MY,MY,
+Sundanese,jv-ID,ID,Sundanese
+Northern Uzbek,uz-UZ,UZ,
+Algerian Arabic,ar-XA,DZ,Algerian
+Moroccan Arabic,ar-XA,MA,Moroccan
+Sindhi,sd-PK,PK,
+Saraiki,pa-PK,PK,Saraiki
+Jin,zh-Hant,CN,Jin
+Min Nan,zh-Hant,TW,Min Nan
+Hakka,zh-Hant,CN,Hakka
+Xiang,zh-Hant,CN,Xiang
+Mongolian,mn-MN,MN,
+Burmese,my-MM,MM,
+Odia,or-IN,IN,
+Nepali,ne-NP,NP,
+Malayalam,ml-IN,IN,
+Ukrainian,uk-UA,UA,
+Greek,el-GR,GR,

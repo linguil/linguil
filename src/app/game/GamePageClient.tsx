@@ -20,17 +20,19 @@ const DarkModeToggleSwitch = dynamic(() => import('@/components/common/DarkModeT
 const Quiz = dynamic(() => import('@/components/game/Quiz').then(mod => mod.Quiz), { ssr: false, loading: () => <div className="flex flex-col items-center justify-center min-h-[550px]"><LoadingSpinner /></div> });
 const QuizResults = dynamic(() => import('@/components/game/QuizResults').then(mod => mod.QuizResults), { ssr: false, loading: () => <div className="flex flex-col items-center justify-center min-h-[550px]"><LoadingSpinner /></div> });
 
-// This component handles fetching the initial game data on the client.
-const GamePageClient = () => {
-  // State for storing the initial word data fetched from the API.
-  const [initialDailyWord, setInitialDailyWord] = useState<RawDailyData | null>(null);
+// This component handles displaying the game data, using server-provided data if available.
+const GamePageClient = ({ initialDailyWord: initialWord }: { initialDailyWord?: RawDailyData | null }) => {
+  // State for storing the word data.
+  const [initialDailyWord, setInitialDailyWord] = useState<RawDailyData | null>(initialWord ?? null);
   // State to track if the data is currently being fetched.
-  const [isFetching, setIsFetching] = useState(true);
+  const [isFetching, setIsFetching] = useState(!initialWord);
   // State to store any errors that occur during fetching.
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Fetch the daily word data when the component mounts.
+  // Fetch the daily word data on mount only if not provided from the server.
   useEffect(() => {
+    if (initialWord) return;
+
     const fetchData = async () => {
       try {
         const response = await fetch('/api/daily-word');
@@ -47,7 +49,7 @@ const GamePageClient = () => {
     };
 
     fetchData();
-  }, []);
+  }, [initialWord]);
 
   // Show a loading spinner while fetching the initial data.
   if (isFetching) {

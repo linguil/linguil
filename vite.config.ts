@@ -4,13 +4,13 @@ import path from 'path';
 import { builtinModules } from 'node:module';
 import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig(() => {
-  const VITE_TARGET = process.env.VITE_TARGET;
+export default defineConfig(({ mode }) => {
+  const VITE_TARGET = process.env.VITE_TARGET || mode;
 
   const commonConfig: Partial<UserConfig> = {
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        '@': path.resolve(import.meta.dirname, './src'),
       },
     },
   };

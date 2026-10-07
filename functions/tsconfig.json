@@ -26,7 +26,6 @@
     "noUnusedLocals": true,
     // Reports errors on unused function parameters.
     "noUnusedParameters": true,
-    // Explicitly list the @types packages you need for global types.
-    "types": ["node", "node-fetch", "papaparse"]
+    "types": ["node", "papaparse"]
   }
 }

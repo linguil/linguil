@@ -3,9 +3,10 @@
 
 /* 1. Use @theme to generate utility classes (replaces tailwind.config.js). */
 @theme {
-  /* Automatically generates `.font-body` and `.font-mono` utilities */
+  /* Automatically generates `.font-body`, `.font-mono`, and `.font-code` utilities */
   --font-body: 'PT Sans', sans-serif;
   --font-mono: 'Source Code Pro', monospace;
+  --font-code: 'Source Code Pro', monospace;
 
   /* Map HSL variables */
   --color-background: hsl(var(--background));

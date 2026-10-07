@@ -15,7 +15,7 @@ export const onDailyScoreCreate = onDocumentCreated({ document: "users/{userId}/
     if (!userId) return;
 
     const userPublicDocRef = db.collection("users_public").doc(userId);
-    
+
     // Retry logic to handle potential race conditions during user creation.
     const maxRetries = 3;
     const retryDelay = 2000; // 2 seconds
@@ -60,7 +60,7 @@ export const onDailyScoreCreate = onDocumentCreated({ document: "users/{userId}/
           "scores.totalAnswered": totalAnswered,
           "scores.totalCorrect": totalCorrect,
         });
-        
+
         return; // Success, exit the function.
       }
 
@@ -74,13 +74,12 @@ export const onDailyScoreCreate = onDocumentCreated({ document: "users/{userId}/
     // If the loop completes, the document was never found.
     console.warn(`onDailyScoreCreate: users_public/${userId} still not found after ${maxRetries} retries.`);
 
-  } catch(err) {
-    // Log any errors that occur.
-    console.error(`Error in onDailyScoreCreate for user ${event.params.userId}:`, err);
+  } catch (error) {
+    console.error("Error in onDailyScoreCreate:", error);
   }
 });
 
-// Firestore trigger to synchronize the 'hasPaid' status with Firebase Auth custom claims.
+// Firestore trigger that updates a user's Firebase Auth custom claims when their 'hasPaid' status changes.
 export const onUserUpdate = onDocumentUpdated(
   {
     document: "users/{userId}",
@@ -89,10 +88,8 @@ export const onUserUpdate = onDocumentUpdated(
   },
   async (event) => {
     try {
-      // Exit if there's no event data.
       if (!event.data) return;
 
-      // Get the data before and after the update.
       const beforeData = event.data.before.data();
       const afterData = event.data.after.data();
       const userId = event.params.userId;
@@ -121,7 +118,7 @@ export const onUserUpdate = onDocumentUpdated(
       if (beforeData?.hasPaid === afterData?.hasPaid) {
         return;
       }
-      
+
       // Determine the new 'hasPaid' status.
       const hasPaid = afterData.hasPaid === true;
 

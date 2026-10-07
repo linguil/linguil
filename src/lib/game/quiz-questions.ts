@@ -41,7 +41,7 @@ export const generateQuestions = (
       type: config.type as Question['type'],
       prompt: promptText,
       correctAnswer: correctAnswer,
-      options: shuffleArray([correctAnswer, ...distractorOptions]), // Combine and shuffle the correct answer and distractors.
+      options: shuffleArray([...new Set([correctAnswer, ...distractorOptions])]), // Combine, deduplicate, and shuffle the correct answer and distractors.
     };
   });
 };

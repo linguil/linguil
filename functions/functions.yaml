@@ -1,0 +1,355 @@
+{
+  "specVersion": "v1alpha1",
+  "endpoints": {
+    "seedDailyWord": {
+      "availableMemoryMb": 512,
+      "timeoutSeconds": 540,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "europe-west2"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "GEMINI_API_KEY"
+        }
+      ],
+      "labels": {},
+      "scheduleTrigger": {
+        "schedule": "every day 00:00",
+        "retryConfig": {}
+      },
+      "entryPoint": "seedDailyWord"
+    },
+    "onUserCreate": {
+      "platform": "gcfv1",
+      "availableMemoryMb": null,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "STRIPE_SECRET_KEY"
+        }
+      ],
+      "eventTrigger": {
+        "eventType": "providers/firebase.auth/eventTypes/user.create",
+        "eventFilters": {
+          "resource": "projects/linguil"
+        },
+        "retry": false
+      },
+      "labels": {},
+      "entryPoint": "onUserCreate"
+    },
+    "createUserAccount": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "STRIPE_SECRET_KEY"
+        },
+        {
+          "key": "META_CAPI_ACCESS_TOKEN"
+        },
+        {
+          "key": "META_PIXEL_ID"
+        }
+      ],
+      "labels": {},
+      "httpsTrigger": {},
+      "entryPoint": "createUserAccount"
+    },
+    "trackSocialRegistration": {
+      "availableMemoryMb": null,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "META_CAPI_ACCESS_TOKEN"
+        },
+        {
+          "key": "META_PIXEL_ID"
+        }
+      ],
+      "labels": {},
+      "callableTrigger": {},
+      "entryPoint": "trackSocialRegistration"
+    },
+    "createCheckoutSession": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "STRIPE_SECRET_KEY"
+        }
+      ],
+      "labels": {},
+      "httpsTrigger": {},
+      "entryPoint": "createCheckoutSession"
+    },
+    "stripeWebhook": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "STRIPE_SECRET_KEY"
+        },
+        {
+          "key": "STRIPE_WEBHOOK_SECRET"
+        }
+      ],
+      "labels": {},
+      "httpsTrigger": {},
+      "entryPoint": "stripeWebhook"
+    },
+    "redditGoldWebhook": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "labels": {},
+      "httpsTrigger": {},
+      "entryPoint": "redditGoldWebhook"
+    },
+    "onDailyScoreCreate": {
+      "availableMemoryMb": null,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "labels": {},
+      "eventTrigger": {
+        "eventType": "google.cloud.firestore.document.v1.created",
+        "eventFilters": {
+          "database": "(default)",
+          "namespace": "(default)"
+        },
+        "eventFilterPathPatterns": {
+          "document": "users/{userId}/dailyScores/{dailyScoreId}"
+        },
+        "retry": false
+      },
+      "entryPoint": "onDailyScoreCreate"
+    },
+    "onUserUpdate": {
+      "availableMemoryMb": null,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "META_CAPI_ACCESS_TOKEN"
+        },
+        {
+          "key": "META_PIXEL_ID"
+        }
+      ],
+      "labels": {},
+      "eventTrigger": {
+        "eventType": "google.cloud.firestore.document.v1.updated",
+        "eventFilters": {
+          "database": "(default)",
+          "namespace": "(default)"
+        },
+        "eventFilterPathPatterns": {
+          "document": "users/{userId}"
+        },
+        "retry": false
+      },
+      "entryPoint": "onUserUpdate"
+    },
+    "authProxy": {
+      "availableMemoryMb": null,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "labels": {},
+      "httpsTrigger": {},
+      "entryPoint": "authProxy"
+    },
+    "redditAuth": {
+      "availableMemoryMb": 256,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "STRIPE_SECRET_KEY"
+        },
+        {
+          "key": "NEXT_PUBLIC_FIREBASE_API_KEY"
+        }
+      ],
+      "labels": {},
+      "httpsTrigger": {},
+      "entryPoint": "redditAuth"
+    },
+    "firestoreProxy": {
+      "availableMemoryMb": null,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "NEXT_PUBLIC_FIREBASE_API_KEY"
+        }
+      ],
+      "labels": {},
+      "httpsTrigger": {
+        "invoker": [
+          "public"
+        ]
+      },
+      "entryPoint": "firestoreProxy"
+    },
+    "logDiscordServerCount": {
+      "availableMemoryMb": null,
+      "timeoutSeconds": null,
+      "minInstances": null,
+      "maxInstances": null,
+      "ingressSettings": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "vpc": null,
+      "platform": "gcfv2",
+      "region": [
+        "us-central1"
+      ],
+      "secretEnvironmentVariables": [
+        {
+          "key": "DISCORD_BOT_TOKEN"
+        }
+      ],
+      "labels": {},
+      "scheduleTrigger": {
+        "schedule": "every 24 hours",
+        "retryConfig": {},
+        "timeZone": "UTC"
+      },
+      "entryPoint": "logDiscordServerCount"
+    }
+  },
+  "params": [
+    {
+      "type": "secret",
+      "name": "STRIPE_WEBHOOK_SECRET"
+    },
+    {
+      "type": "secret",
+      "name": "STRIPE_SECRET_KEY"
+    },
+    {
+      "type": "secret",
+      "name": "NEXT_PUBLIC_FIREBASE_API_KEY"
+    },
+    {
+      "type": "secret",
+      "name": "DISCORD_BOT_TOKEN"
+    }
+  ],
+  "requiredAPIs": [
+    {
+      "api": "cloudscheduler.googleapis.com",
+      "reason": "Needed for scheduled functions."
+    }
+  ],
+  "extensions": {}
+}

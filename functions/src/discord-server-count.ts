@@ -3,7 +3,6 @@ import { defineSecret } from "firebase-functions/params";
 import { getApps, initializeApp } from "firebase-admin/app";
 import { FieldValue } from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
-import fetch from "node-fetch";
 import { db } from "./init";
 
 if (getApps().length === 0) {

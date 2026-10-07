@@ -43,7 +43,8 @@ export const verifyToken = async (c: Context, next: Next) => {
       return c.json({ message: 'Unauthorized: Invalid token.' }, 401);
     }
 
-    // 3. Attach user profile to the context for downstream handlers.
+    // 3. Attach user profile and UID to the context for downstream handlers.
+    c.set('uid', data.users[0].localId);
     c.set('userProfile', data.users[0]);
     await next();
 

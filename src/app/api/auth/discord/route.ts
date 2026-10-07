@@ -9,9 +9,6 @@ if (getApps().length === 0) {
   initializeApp();
 }
 
-// The URL of the Firebase function to create a new user's database records.
-const CREATE_USER_URL = process.env.NEXT_PUBLIC_FIREBASE_CREATE_USER_FUNCTION_URL!;
-
 export async function POST(req: NextRequest) {
   const auth = getAuth();
 
@@ -78,14 +75,6 @@ export async function POST(req: NextRequest) {
         
         // 6. Re-fetch the user record to get all properties, including the new custom claims.
         userRecord = await auth.getUser(newUserRecord.uid);
-
-        // 7. Trigger the background Cloud Function to create user documents in Firestore.
-        fetch(CREATE_USER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: userRecord.uid, displayName: username, photoURL }),
-        });
-
       } else {
         // Handle other Firebase Admin SDK errors.
         throw error;

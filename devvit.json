@@ -137,7 +137,7 @@
     }
   },
   "scripts": {
-    "dev": "VITE_TARGET=client vite build --watch & VITE_TARGET=server vite build --watch",
-    "build": "VITE_TARGET=client vite build && VITE_TARGET=server vite build"
+    "dev": "vite build --watch --mode client & vite build --watch --mode server",
+    "build": "vite build --mode client && vite build --mode server"
   }
 }

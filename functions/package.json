@@ -12,20 +12,17 @@
     "node": "22"
   },
   "dependencies": {
-    "@google-cloud/text-to-speech": "^7.1.1",
     "@google/genai": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "facebook-nodejs-business-sdk": "^24.0.1",
     "firebase-admin": "^13.10.0",
     "firebase-functions": "^7.4.0",
-    "node-fetch": "^3.3.2",
     "papaparse": "^5.5.4",
     "stripe": "^22.6.2"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/facebook-nodejs-business-sdk": "^24.0.0",
-    "@types/node-fetch": "^2.6.13",
     "@types/papaparse": "^5.5.2",
     "firebase-tools": "^15.32.1",
     "typescript": "^7.0.2"

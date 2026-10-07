@@ -73,9 +73,9 @@ const useFriends = (currentUserStats: PlayerStats | null) => {
         // Use the server's error message if available.
         throw new Error(data.message || 'Failed to remove friend');
       }
-      
+
       // Extract friend's first name for the notification.
-      const firstName = friendName.split(' ')[0];
+      const firstName = (friendName || 'Anonymous').split(' ')[0];
 
       // Show success notification.
       toast({ title: `Friend removed: ${firstName}`, description: 'Removed friend successfully' });

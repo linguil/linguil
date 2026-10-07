@@ -36,7 +36,15 @@ async function authenticateWithBackend(discordSdk: any, authorizeSilently: boole
       authorizePayload.prompt = 'none';
     }
 
-    const authResult = await discordSdk.commands.authorize(authorizePayload);
+    const authorizePromise = discordSdk.commands.authorize(authorizePayload);
+    const authResult = authorizeSilently
+      ? await Promise.race([
+          authorizePromise,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Silent Discord authorization timed out')), 5000)
+          ),
+        ])
+      : await authorizePromise;
     code = authResult.code;
   } catch (error: any) {
     if (error.code === 4002 || error.message?.includes('Already authenticated')) {

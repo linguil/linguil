@@ -66,7 +66,7 @@ const cspPolicies = {
     'https://*.linguil.app'
   ],
   // Specifies the valid parents that may embed a page using <frame> or <iframe>.
-  'frame-ancestors': ["'self'", 'https://discord.com', 'https://*.discord.com', 'https://*.reddit.com'],
+  'frame-ancestors': ["'self'", 'https://discord.com', 'https://*.discord.com', 'https://*.discordsays.com', 'https://*.reddit.com'],
 };
 
 // Constructs a Content-Security-Policy string from a policy object.

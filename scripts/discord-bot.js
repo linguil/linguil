@@ -6,8 +6,12 @@ import {
 import cron from 'node-cron';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
@@ -21,11 +25,20 @@ if (!TOKEN) {
 let db = null;
 try {
   if (getApps().length === 0) {
-    const serviceAccountPath = path.resolve('./service-account.json');
-    if (fs.existsSync(serviceAccountPath)) {
-      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
+    const candidatePaths = [
+      process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      path.resolve('./service-account.json'),
+      path.resolve(__dirname, '../service-account.json'),
+      path.resolve(__dirname, './service-account.json'),
+    ].filter(Boolean);
+
+    const foundPath = candidatePaths.find(p => fs.existsSync(p));
+    if (foundPath) {
+      console.log(`Loading Firebase service account from: ${foundPath}`);
+      const serviceAccount = JSON.parse(fs.readFileSync(foundPath, 'utf-8'));
       initializeApp({ credential: cert(serviceAccount) });
     } else {
+      console.warn("No service-account.json found in candidate paths. Falling back to Application Default Credentials (ADC).");
       initializeApp();
     }
   }
@@ -37,7 +50,13 @@ try {
 }
 
 // Local cache for server channel preferences (survives bot restarts if offline).
-const CONFIG_FILE = path.resolve('./server-configs.json');
+const configCandidate = [
+  path.resolve('./server-configs.json'),
+  path.resolve(__dirname, '../server-configs.json'),
+  path.resolve(__dirname, './server-configs.json'),
+].find(p => fs.existsSync(p));
+
+const CONFIG_FILE = configCandidate || path.resolve(__dirname, '../server-configs.json');
 let serverConfigs = {};
 
 if (fs.existsSync(CONFIG_FILE)) {

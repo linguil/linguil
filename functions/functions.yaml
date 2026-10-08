@@ -96,6 +96,9 @@
       ],
       "secretEnvironmentVariables": [
         {
+          "key": "STRIPE_SECRET_KEY"
+        },
+        {
           "key": "META_CAPI_ACCESS_TOKEN"
         },
         {
@@ -343,6 +346,10 @@
     {
       "type": "secret",
       "name": "DISCORD_BOT_TOKEN"
+    },
+    {
+      "type": "secret",
+      "name": "GEMINI_API_KEY"
     }
   ],
   "requiredAPIs": [

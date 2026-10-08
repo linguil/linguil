@@ -1,13 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Source+Code+Pro:wght@400;600&display=swap');
+
 /* Include Tailwind's core and animation plugin. */
 @import 'tailwindcss';
 @plugin 'tailwindcss-animate';
 
 /* 1. Generate utility classes (replaces tailwind.config.ts). */
 @theme {
-  /* Fonts mapping (from next/font) */
-  --font-body: var(--font-pt-sans), sans-serif;
-  --font-headline: var(--font-pt-sans), sans-serif;
-  --font-code: var(--font-source-code-pro), monospace;
+  /* Fonts mapping */
+  --font-body: 'PT Sans', sans-serif;
+  --font-headline: 'PT Sans', sans-serif;
+  --font-code: 'Source Code Pro', monospace;
 
   /* Color mapping */
   --color-background: hsl(var(--background));
@@ -89,6 +91,8 @@
 
   /* Define CSS variables for the light theme. */
   :root {
+    --font-pt-sans: 'PT Sans', sans-serif;
+    --font-source-code-pro: 'Source Code Pro', monospace;
     --background: 40 50% 96%; /* Light Beige */
     --foreground: 27 20% 15%; /* Dark Brown */
     --card: 0 0% 100%; /* White */

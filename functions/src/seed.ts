@@ -789,7 +789,7 @@ export const seedDailyWord = onSchedule(
 
       // 3. Save the audio content.
       if (audioContent) {
-        const bucket = getStorage().bucket();
+        const bucket = getStorage().bucket("linguil.firebasestorage.app");
         const fileName = `audio/${docId}/${parsedWord.transliteration || "audio"}.mp3`;
         const file = bucket.file(fileName);
         await file.save(audioContent, { metadata: { contentType: "audio/mpeg" }, public: true });

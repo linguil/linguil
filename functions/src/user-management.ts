@@ -152,8 +152,8 @@ const setupNewUser = async (user: UserRecord) => {
 
   let stripeCustomerId = userDoc.data()?.stripeCustomerId;
   if (!stripeCustomerId) {
-    const stripe = getStripe();
     try {
+      const stripe = getStripe();
       // Check if customer already exists for this UID to avoid duplicates under concurrent invocations
       const existingCustomers = await stripe.customers.search({
         query: `metadata['firebaseUID']:'${user.uid}'`,
@@ -300,7 +300,7 @@ export const createUserAccount = onRequest(
 export const trackSocialRegistration = onCall(
   {
     region: "us-central1",
-    secrets: ["META_CAPI_ACCESS_TOKEN", "META_PIXEL_ID"],
+    secrets: ["STRIPE_SECRET_KEY", "META_CAPI_ACCESS_TOKEN", "META_PIXEL_ID"],
   },
   async (request) => {
     if (!request.auth) {

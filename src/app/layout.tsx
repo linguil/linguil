@@ -3,7 +3,6 @@ import './globals.css';
 
 // Import Next.js and React types and components.
 import type { Metadata } from 'next';
-import { PT_Sans, Source_Code_Pro } from 'next/font/google';
 import { Suspense } from 'react';
 
 // Import custom components.
@@ -13,10 +12,6 @@ import { Providers } from './providers';
 import { Footer } from '@/components/common/Footer';
 import { Toaster } from '@/components/ui/toaster';
 import { PaymentProcessor } from '@/components/payments/PaymentProcessor';
-
-// Initialize application fonts and expose them as CSS variables.
-const ptSans = PT_Sans({ subsets: ['latin'], style: ['normal', 'italic'], weight: ['400', '700'], variable: '--font-pt-sans' });
-const sourceCodePro = Source_Code_Pro({ subsets: ['latin'], weight: ['400', '600'], variable: '--font-source-code-pro' });
 
 // Define metadata for the application's head tag.
 export const metadata: Metadata = {
@@ -121,6 +116,8 @@ export default async function RootLayout({
           }}
         />
         {/* Preconnect to external services to accelerate loading. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://auth.linguil.app" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://firebase.googleapis.com" crossOrigin="anonymous" />
@@ -133,7 +130,7 @@ export default async function RootLayout({
         />
       </head>
       {/* Apply fonts and layout styles to the body. */}
-      <body className={`${ptSans.variable} ${sourceCodePro.variable} font-body antialiased flex flex-col min-h-screen overflow-x-hidden`}>
+      <body className="font-body antialiased flex flex-col min-h-screen overflow-x-hidden">
         {/* Wrap the application with context providers. */}
         <Providers>
           <ConditionalHeader />

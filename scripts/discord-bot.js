@@ -90,6 +90,40 @@ async function loadServerConfigsFromFirestore() {
   }
 }
 
+// Load today's existing scores from Firestore into memory cache on startup.
+async function loadTodayScoresFromFirestore() {
+  if (!db) return;
+  const today = getTodayDateKey();
+  try {
+    for (const guildId of Object.keys(serverConfigs)) {
+      if (!guildScores.has(guildId)) {
+        guildScores.set(guildId, new Map());
+      }
+      const serverMap = guildScores.get(guildId);
+      const snapshot = await db.collection('discord_guilds').doc(guildId)
+        .collection('daily_scores').doc(today)
+        .collection('scores').get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data && data.userId) {
+          serverMap.set(data.userId, {
+            userId: data.userId,
+            username: data.username,
+            score: data.score,
+            total: data.total,
+            bear: data.bear,
+          });
+        }
+      });
+      if (snapshot.size > 0) {
+        console.log(`Loaded ${snapshot.size} existing score(s) for server ${guildId} on ${today}.`);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load today's scores from Firestore:", err);
+  }
+}
+
 async function saveConfig(guildId, channelId) {
   serverConfigs[guildId] = channelId;
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(serverConfigs, null, 2));
@@ -241,6 +275,12 @@ client.once('clientReady', async () => {
   // Sync server configs from Firestore.
   await loadServerConfigsFromFirestore();
 
+  // Load today's existing scores from Firestore into memory.
+  await loadTodayScoresFromFirestore();
+
+  // Rescan recent messages in configured channels to fix any falsely snaked scores.
+  await rescanRecentChannelMessages();
+
   // 1. Register the slash commands globally.
   const setChannelCmd = new SlashCommandBuilder()
     .setName('setchannel')
@@ -332,6 +372,189 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
+/**
+ * Verifies that a claimed score matches the user's recorded game score in Firestore
+ * for the exact challenge date (wordIdentifier).
+ * Returns { verified: boolean, reason?: string }
+ */
+async function verifyUserScore(userId, username, claimedScore, wordIdentifier) {
+  if (!db) {
+    return { verified: false, reason: 'database_unavailable' };
+  }
+
+  try {
+    let userScoreDoc = await db.collection('users').doc(userId)
+      .collection('dailyScores').doc(wordIdentifier).get();
+
+    // If doc not found immediately, retry once after 1.5s in case of write latency right after quiz finish.
+    if (!userScoreDoc.exists) {
+      await new Promise(r => setTimeout(r, 1500));
+      userScoreDoc = await db.collection('users').doc(userId)
+        .collection('dailyScores').doc(wordIdentifier).get();
+    }
+
+    if (!userScoreDoc.exists) {
+      console.warn(`[Anti-Cheat] No game score record found in Firestore for user ${username} (${userId}) on ${wordIdentifier}. Reacting with snake.`);
+      return { verified: false, reason: 'no_record' };
+    }
+
+    const recordedScore = userScoreDoc.data()?.score;
+    if (recordedScore !== claimedScore) {
+      console.warn(`[Anti-Cheat] Score mismatch for user ${username} (${userId}) on ${wordIdentifier}. Claimed: ${claimedScore}, Recorded: ${recordedScore}. Reacting with snake.`);
+      return { verified: false, reason: 'score_mismatch' };
+    }
+
+    console.log(`[Anti-Cheat] Verified score for user ${username} (${userId}) on ${wordIdentifier}: claimed ${claimedScore}, matches recorded score.`);
+    return { verified: true };
+
+  } catch (err) {
+    console.error(`[Anti-Cheat] Error verifying user score in Firestore for user ${username} (${userId}) on ${wordIdentifier}:`, err);
+    return { verified: false, reason: 'error', error: err };
+  }
+}
+
+// Handles processing a score message.
+async function handleScoreMessage(message, match) {
+  const day = match[1];
+  const month = match[2];
+  const year = match[3];
+  const score = parseInt(match[4], 10);
+  const total = parseInt(match[5], 10);
+  const bear = match[6].trim();
+
+  // Scores must be 0, 1, 2, or 3.
+  if (isNaN(score) || score < 0 || score > total || total !== 3) {
+    return;
+  }
+
+  const guildId = message.guildId;
+  const userId = message.author.id;
+  const username = message.author.displayName || message.author.username;
+  const wordIdentifier = `20${year}-${month}-${day}`;
+  const today = getTodayDateKey();
+
+  // Ensure a Map exists for this specific server.
+  if (!guildScores.has(guildId)) {
+    guildScores.set(guildId, new Map());
+  }
+
+  const serverMap = guildScores.get(guildId);
+
+  // Only process the user's first shared score of the day for this server.
+  if (serverMap.has(userId)) {
+    return;
+  }
+
+  // Anti-Cheat Verification: verify against Firestore daily score record.
+  if (db) {
+    const result = await verifyUserScore(userId, username, score, wordIdentifier);
+
+    if (!result.verified) {
+      if (result.reason === 'no_record' || result.reason === 'score_mismatch') {
+        try {
+          await message.react('🐍');
+        } catch (reactErr) {
+          console.error("Failed to react with snake emoji:", reactErr);
+        }
+      }
+      return;
+    }
+
+    // Honest player verified: remove any snake reaction previously given.
+    try {
+      const snakeReaction = message.reactions.cache.get('🐍');
+      if (snakeReaction) {
+        await snakeReaction.users.remove(client.user.id);
+      }
+    } catch (removeErr) {
+      // Ignore reaction removal errors if bot lacks permission or reaction absent.
+    }
+  }
+
+  // Record verified score in memory.
+  serverMap.set(userId, {
+    userId,
+    username,
+    score,
+    total,
+    bear
+  });
+
+  // Persist verified score to Firestore: daily score and all-time running total for this server.
+  if (db) {
+    try {
+      const dailyDocRef = db.collection('discord_guilds').doc(guildId)
+        .collection('daily_scores').doc(today)
+        .collection('scores').doc(userId);
+
+      const existingDailyDoc = await dailyDocRef.get();
+
+      const batch = db.batch();
+
+      // 1. Daily score document.
+      batch.set(dailyDocRef, {
+        userId,
+        username,
+        score,
+        total,
+        bear,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      // 2. All-time score document (only increment if this daily score was not previously recorded).
+      if (!existingDailyDoc.exists) {
+        const allTimeDocRef = db.collection('discord_guilds').doc(guildId)
+          .collection('all_time_scores').doc(userId);
+
+        batch.set(allTimeDocRef, {
+          userId,
+          username,
+          totalPoints: FieldValue.increment(score),
+          gamesPlayed: FieldValue.increment(1),
+          perfectScores: FieldValue.increment(score === total ? 1 : 0),
+          lastPlayed: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+
+      await batch.commit();
+    } catch (err) {
+      console.error(`Failed to persist Discord score to Firestore for server ${guildId}:`, err);
+    }
+  }
+
+  // Honest player: react with the bear emoji.
+  try {
+    await message.react('🐻');
+  } catch (err) {
+    console.error("Failed to react. Ensure bot has 'Add Reactions' permission:", err);
+  }
+}
+
+// Rescan recent messages in configured channels to fix any falsely snaked scores.
+async function rescanRecentChannelMessages() {
+  for (const [guildId, channelId] of Object.entries(serverConfigs)) {
+    try {
+      const channel = await client.channels.fetch(channelId).catch(() => null);
+      if (!channel || !channel.isTextBased()) continue;
+
+      const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+      if (!messages) continue;
+
+      // Process chronologically (oldest to newest)
+      const sortedMessages = Array.from(messages.values()).reverse();
+      for (const msg of sortedMessages) {
+        if (msg.author.bot) continue;
+        const match = msg.content.match(linguilRegex);
+        if (match) {
+          await handleScoreMessage(msg, match);
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to rescan recent messages for server ${guildId}:`, err);
+    }
+  }
+}
+
 // Listen for scores.
 client.on('messageCreate', async (message) => {
   // Ignore bots and DMs.
@@ -344,123 +567,7 @@ client.on('messageCreate', async (message) => {
   const match = message.content.match(linguilRegex);
 
   if (match) {
-    const day = match[1];
-    const month = match[2];
-    const year = match[3];
-    const score = parseInt(match[4], 10);
-    const total = parseInt(match[5], 10);
-    const bear = match[6].trim();
-
-    // Scores must be 0, 1, 2, or 3.
-    if (isNaN(score) || score < 0 || score > total || total !== 3) {
-      return;
-    }
-
-    const guildId = message.guildId;
-    const userId = message.author.id;
-    const username = message.author.displayName || message.author.username;
-    const wordIdentifier = `20${year}-${month}-${day}`;
-    const today = getTodayDateKey();
-
-    // Ensure a Map exists for this specific server.
-    if (!guildScores.has(guildId)) {
-      guildScores.set(guildId, new Map());
-    }
-
-    const serverMap = guildScores.get(guildId);
-
-    // Only process the user's first shared score of the day for this server.
-    if (serverMap.has(userId)) {
-      return;
-    }
-
-    // Anti-Cheat Verification: verify against Firestore daily score record.
-    if (db) {
-      try {
-        const userScoreDoc = await db.collection('users').doc(userId)
-          .collection('dailyScores').doc(wordIdentifier).get();
-
-        if (!userScoreDoc.exists) {
-          // No record of this user playing this daily quiz in Firestore.
-          console.warn(`[Anti-Cheat] No game score record found in Firestore for user ${username} (${userId}) on ${wordIdentifier}. Reacting with snake.`);
-          try {
-            await message.react('🐍');
-          } catch (reactErr) {
-            console.error("Failed to react with snake emoji:", reactErr);
-          }
-          return;
-        }
-
-        const recordedScore = userScoreDoc.data()?.score;
-        if (recordedScore !== score) {
-          // Score modified by the user (does not match actual game score).
-          console.warn(`[Anti-Cheat] Score mismatch for user ${username} (${userId}) on ${wordIdentifier}. Claimed: ${score}, Recorded: ${recordedScore}. Reacting with snake.`);
-          try {
-            await message.react('🐍');
-          } catch (reactErr) {
-            console.error("Failed to react with snake emoji:", reactErr);
-          }
-          return;
-        }
-      } catch (err) {
-        console.error(`[Anti-Cheat] Error verifying user score in Firestore:`, err);
-        // On database read failure, do not falsely accuse, but log the error.
-      }
-    }
-
-    // Record verified score in memory.
-    serverMap.set(userId, {
-      userId,
-      username,
-      score,
-      total,
-      bear
-    });
-
-    // Persist verified score to Firestore: daily score and all-time running total for this server.
-    if (db) {
-      try {
-        const batch = db.batch();
-
-        // 1. Daily score document.
-        const dailyDocRef = db.collection('discord_guilds').doc(guildId)
-          .collection('daily_scores').doc(today)
-          .collection('scores').doc(userId);
-
-        batch.set(dailyDocRef, {
-          userId,
-          username,
-          score,
-          total,
-          bear,
-          createdAt: FieldValue.serverTimestamp(),
-        });
-
-        // 2. All-time score document.
-        const allTimeDocRef = db.collection('discord_guilds').doc(guildId)
-          .collection('all_time_scores').doc(userId);
-
-        batch.set(allTimeDocRef, {
-          userId,
-          username,
-          totalPoints: FieldValue.increment(score),
-          gamesPlayed: FieldValue.increment(1),
-          perfectScores: FieldValue.increment(score === total ? 1 : 0),
-          lastPlayed: FieldValue.serverTimestamp(),
-        }, { merge: true });
-
-        await batch.commit();
-      } catch (err) {
-        console.error(`Failed to persist Discord score to Firestore for server ${guildId}:`, err);
-      }
-    }
-
-    // Honest player: react with the bear emoji.
-    try {
-      await message.react('🐻');
-    } catch (err) {
-      console.error("Failed to react. Ensure bot has 'Add Reactions' permission:", err);
-    }
+    await handleScoreMessage(message, match);
   }
 });
 

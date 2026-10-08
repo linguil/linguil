@@ -215,6 +215,8 @@ type QuizResultsProps = {
   darkModeToggleSwitch: ReactNode;
   // Is the game in offline mode.
   isOfflineGame: boolean;
+  // Challenge date (YYYY-MM-DD)
+  date?: string;
 };
 
 // Displays quiz results, stats, and CTAs.
@@ -229,6 +231,7 @@ const QuizResults = ({
   gameModeToggleSwitch, 
   darkModeToggleSwitch,
   isOfflineGame,
+  date,
 }: QuizResultsProps) => {
   // Auth hook for user and payment status.
   const { user, hasPaid, openAuthDialog } = useAuth();
@@ -241,7 +244,7 @@ const QuizResults = ({
     resultsRef.current?.focus();
   }, []);
 
-  const shareText = questionResults ? generateShareText(score, totalQuestions, word, questionResults) : '';
+  const shareText = questionResults ? generateShareText(score, totalQuestions, word, questionResults, isOfflineGame ? undefined : date) : '';
 
   // Share button logic.
   const handleShare = async () => {

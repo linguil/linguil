@@ -36,13 +36,20 @@ export function generateShareText(
   score: number,
   totalQuestions: number,
   word: { transliteration: string; nativeScript: string },
-  results: boolean[]
+  results: boolean[],
+  challengeDate?: string
 ) {
-  const date = new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
-  });
+  let date: string;
+  if (challengeDate && /^\d{4}-\d{2}-\d{2}$/.test(challengeDate)) {
+    const [yyyy, mm, dd] = challengeDate.split('-');
+    date = `${dd}/${mm}/${yyyy.slice(2)}`;
+  } else {
+    const now = new Date();
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const year = String(now.getUTCFullYear()).slice(2);
+    date = `${day}/${month}/${year}`;
+  }
 
   const isPerfect = score === totalQuestions;
   const medal = isPerfect ? ' 🏅' : '';

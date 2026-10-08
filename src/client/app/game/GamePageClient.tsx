@@ -141,6 +141,7 @@ const GameFlow = ({ initialDailyWord }: { initialDailyWord: RawDailyData | null 
         score={dailyScore.score}
         totalQuestions={dailyScore.totalQuestions}
         questionResults={dailyScore.questionResults}
+        date={data.date}
         word={data.word}
         languageStats={data.languageStats}
         startOfflineGame={startNewOfflineGame}

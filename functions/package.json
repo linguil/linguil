@@ -30,7 +30,7 @@
   "private": true,
   "allowScripts": {
     "@firebase/util@1.15.3": true,
-    "@google/genai@2.27.0": true,
+    "@google/genai@2.28.0": true,
     "protobufjs@7.6.6": true,
     "re2@1.27.0": true
   }

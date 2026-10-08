@@ -36,7 +36,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "discord.js": "^14.26.5",
-    "firebase": "^12.16.0",
+    "firebase": "^12.19.0",
     "firebase-admin": "^13.10.0",
     "hono": "^4.12.29",
     "html5-qrcode": "^2.3.8",
@@ -53,6 +53,10 @@
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7"
+  },
+  "overrides": {
+    "@firebase/app": "0.16.2",
+    "@firebase/app-compat": "0.5.18"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.10",

@@ -30,15 +30,17 @@ try {
       path.resolve('./service-account.json'),
       path.resolve(__dirname, '../service-account.json'),
       path.resolve(__dirname, './service-account.json'),
+      path.resolve(process.env.HOME || '', 'service-account.json'),
+      path.resolve(process.env.HOME || '', 'linguil/service-account.json'),
     ].filter(Boolean);
 
     const foundPath = candidatePaths.find(p => fs.existsSync(p));
     if (foundPath) {
-      console.log(`Loading Firebase service account from: ${foundPath}`);
+      console.log(`[Firebase Admin] Loading service account credentials from: ${foundPath}`);
       const serviceAccount = JSON.parse(fs.readFileSync(foundPath, 'utf-8'));
       initializeApp({ credential: cert(serviceAccount) });
     } else {
-      console.warn("No service-account.json found in candidate paths. Falling back to Application Default Credentials (ADC).");
+      console.error(`[Firebase Admin] WARNING: No service-account.json found! Searched:`, candidatePaths);
       initializeApp();
     }
   }
@@ -46,7 +48,7 @@ try {
   db.settings({ ignoreUndefinedProperties: true });
   console.log("Firebase Admin initialized for Discord bot.");
 } catch (err) {
-  console.warn("Firebase Admin failed to initialize in discord-bot. Falling back to local storage:", err.message);
+  console.error("Firebase Admin initialization error in discord-bot:", err);
 }
 
 // Local cache for server channel preferences (survives bot restarts if offline).

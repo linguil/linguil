@@ -5,8 +5,6 @@ import type { TaskRequest, TaskResponse } from '@devvit/web/server';
 import { serve } from '@hono/node-server';
 import { verifyToken } from './middleware';
 import { addDailyWordRoute } from './routes/game/daily-word';
-import { addLeaderboardRoute } from './routes/user/leaderboard';
-import { addUserAccountRoute } from './routes/auth/create-user-account';
 import { addAudioRoute } from './routes/game/[...filePath]';
 import { addExchangeTokenRoute } from './routes/auth/exchange';
 import { addLogoutRoute } from './routes/auth/logout';
@@ -64,24 +62,24 @@ app.post('/internal/scheduler/daily-post', async (c) => {
 
   const dailyWordData = await getDailyWordData();
   if (!dailyWordData) {
-      console.error("Failed to fetch daily word");
-      return c.json<TaskResponse>({ status: "ok" });
+    console.error("Failed to fetch daily word");
+    return c.json<TaskResponse>({ status: "ok" });
   }
 
   try {
     const today = new Date();
     await reddit.submitCustomPost({
-        subredditName: subredditName,
-        title: `linguil | ${dailyWordData.word.transliteration} | ${dailyWordData.word.nativeScript} | ${today.toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-        })}`,
-        entry: "game",
+      subredditName: subredditName,
+      title: `linguil | ${dailyWordData.word.transliteration} | ${dailyWordData.word.nativeScript} | ${today.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+      })}`,
+      entry: "game",
     });
     console.log(`Created daily post in ${subredditName}`);
   } catch (e) {
-      console.error(`Failed to create post in ${subredditName}`, e);
+    console.error(`Failed to create post in ${subredditName}`, e);
   }
 
   return c.json<TaskResponse>({ status: "ok" });
@@ -92,8 +90,6 @@ app.use('/api/game/score', verifyToken);
 app.use('/api/user/*', verifyToken);
 
 addDailyWordRoute(app);
-addLeaderboardRoute(app);
-addUserAccountRoute(app);
 addAudioRoute(app);
 addExchangeTokenRoute(app);
 addLogoutRoute(app);
@@ -115,4 +111,4 @@ app.onError((err: Error, c) => {
   return c.json({ message: 'Internal Server Error' }, 500);
 });
 
-serve({fetch: app.fetch, createServer: createServer, port: getServerPort()})
+serve({ fetch: app.fetch, createServer: createServer, port: getServerPort() })

@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Script from 'next/script';
 import Cookies from 'js-cookie';
+import { isDiscordEnvironment } from '@/lib/utils';
 
 // Add the fbq function to the window interface to avoid TypeScript errors.
 declare global {
@@ -25,11 +26,12 @@ const AnalyticsTracker = memo(() => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, isInsideDiscord } = useAuth();
+  const inDiscord = isInsideDiscord || isDiscordEnvironment();
   const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
   // Ensure client-side identifiers are available for server-side events.
   useEffect(() => {
-    if (isInsideDiscord) return;
+    if (inDiscord) return;
 
     // 1. Capture Meta Click ID (fbclid) and set the _fbc cookie.
     try {
@@ -49,12 +51,12 @@ const AnalyticsTracker = memo(() => {
         }
     } catch (_e) {}
     
-  }, [searchParams, isInsideDiscord]);
+  }, [searchParams, inDiscord]);
 
   // Initializes services and logs page views.
   useEffect(() => {
     // Do not initialize services inside the Discord client or if the pixel ID is missing.
-    if (isInsideDiscord || !metaPixelId) {
+    if (inDiscord || !metaPixelId) {
       return;
     }
 
@@ -97,10 +99,10 @@ const AnalyticsTracker = memo(() => {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [pathname, isInsideDiscord, metaPixelId, user]);
+  }, [pathname, inDiscord, metaPixelId, user]);
 
   // Render the Meta Pixel script if not inside Discord.
-  if (isInsideDiscord || !metaPixelId) {
+  if (inDiscord || !metaPixelId) {
     return null;
   }
 

@@ -30,7 +30,7 @@ export const useLeaderboard = () => {
   const fetchLeaderboard = useCallback(async () => {
     if (!user) return;
     try {
-        const response = await fetch('/api/leaderboard');
+        const response = await fetch('/api/user/friends');
         if (!response.ok) throw new Error('Failed to fetch leaderboard data');
         const data = await response.json();
         setPlayers(data);

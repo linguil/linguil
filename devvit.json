@@ -84,11 +84,6 @@
   },
   "settings": {
     "global": {
-      "NEXT_PUBLIC_FIREBASE_CREATE_USER_FUNCTION_URL": {
-        "type": "string",
-        "label": "NEXT_PUBLIC_FIREBASE_CREATE_USER_FUNCTION_URL",
-        "defaultValue": "https://us-central1-linguil.cloudfunctions.net/createUserAccount"
-      },
       "NEXT_PUBLIC_FIREBASE_EMAIL_AUTH_FUNCTION_URL": {
         "type": "string",
         "label": "NEXT_PUBLIC_FIREBASE_EMAIL_AUTH_FUNCTION_URL",
@@ -128,11 +123,6 @@
         "type": "string",
         "label": "NEXT_PUBLIC_DISCORD_CLIENT_ID",
         "defaultValue": "1473406949792940247"
-      },
-      "FIRESTORE_WRITE_SECRET": {
-        "type": "string",
-        "label": "FIRESTORE_WRITE_SECRET",
-        "isSecret": true
       }
     }
   },

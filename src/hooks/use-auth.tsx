@@ -21,6 +21,7 @@ import { getAuthErrorMessage } from '@/lib/auth-actions';
 import type { DiscordClientUser, DiscordClientAuthResponse } from '@/lib/discord-auth';
 import { httpsCallable } from 'firebase/functions';
 import { useSearchParams } from 'next/navigation';
+import { isDiscordEnvironment } from '@/lib/utils';
 
 // Defines the cookie name for the Firebase ID token.
 const FIREBASE_ID_TOKEN_COOKIE = 'firebaseIdToken';
@@ -72,7 +73,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
   // Ref to hold the Firestore instance.
   const dbRef = useRef<Firestore | null>(null);
   // State to check if the app is inside the Discord client.
-  const [isInsideDiscord, setIsInsideDiscord] = useState(false);
+  const [isInsideDiscord, setIsInsideDiscord] = useState(() => isDiscordEnvironment());
   // State to prevent hydration errors by delaying client-side logic.
   const [hasMounted, setHasMounted] = useState(false);
   const [isGooglePolling, setIsGooglePolling] = useState(false);
@@ -194,8 +195,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!hasMounted) return;
 
-    const params = new URLSearchParams(window.location.search);
-    const inDiscord = !!params.get('frame_id');
+    const inDiscord = isDiscordEnvironment();
     setIsInsideDiscord(inDiscord);
 
     let unsubscribe: (() => void) | undefined;

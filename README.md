@@ -113,35 +113,28 @@ https://github.com/user-attachments/assets/6586485f-584d-48b6-b45a-efbf3d47d69b
 <summary>Requested Devvit domains:</summary>
 <br>
 
-- `us-central1-linguil.cloudfunctions.net` — Serves as a secure proxy for handling all backend game logic—required as the game's backend is built using Firebase, Firestore, and Google Cloud Storage (GCS), which are not directly accessible from the Devvit environment. The proxy:
-
-    (i) authenticates requests from the Devvit app and forwards them to the Firestore/Firebase Auth REST APIs, allowing for secure authentication, score-saving, user accounts, friends, leaderboards, etc., and
-      
-    (ii) fetches audio files from GCS and forwards them to the Devvit app with caching headers, allowing for fast, reliable daily word pronunciation playback.
-  
-  This architecture is essential for the game's functionality, compliance with Devvit's WebView Content Security Policy (CSP) restrictions, and cross-platform interoperability with non-Reddit users (Redis cannot support the required cross-platform relational data structures). The following API routes are handled by this proxy:
-  - Authentication
-    - `/api/create-user-account`: Creates a new user account in Firebase Authentication and Firestore.
-    - `/api/auth/exchange`: Exchanges a Firebase custom token for a session ID token, and sets a secure, httpOnly cookie to establish a user session.
-    - `/api/auth/logout`: Logs the user out of an authenticated session.
-    - `/api/auth/reddit`: Handles Reddit user authentication via Firebase/Firestore.
-  - Game
-    - `/api/audio/*`: Proxies and caches daily word TTS audio files from Google Cloud Storage to the client.
-    - `/api/daily-word`: Fetches all daily game data (including words, languages, families, and statistics) from Firestore.
+- `us-central1-linguil.cloudfunctions.net` — Serves as a secure backend proxy connecting the Devvit app to the Firebase Authentication and Firestore REST APIs, which are not directly accessible from the Devvit environment. This architecture allows for secure user management, game data storage/retrieval, and Reddit Gold payment handling, and is essential for the game's functionality, compliance with Devvit's WebView Content Security Policy (CSP) restrictions, and cross-platform interoperability with non-Reddit users (Redis cannot support the required cross-platform relational data structures). The following API routes are handled by this proxy:
+  - `/redditAuth` Cloud Function
+    - `/api/auth/reddit`: Handles account creation and authentication for users using their Reddit UID in Firebase Auth/Firestore, returning custom tokens.
+  - `/authProxy` Cloud Function
+    - `/api/auth/exchange`: Exchanges Firebase custom tokens for session ID tokens, verifies session tokens via the Firebase Auth REST API, and sets a secure, httpOnly cookie to establish a user session.
+  - `/firestoreProxy` Cloud Function
+    - `/api/daily-word`: Fetches all daily game data (words, languages, families, and statistics) from Firestore.
     - `/api/game/score`: Handles saving and retrieving user game scores using Firestore.
-  - Payments
-    - `/internal/payments/fulfill`: Adds linguil+ status to a user's account in Firestore after Reddit Gold payment.
-    - `/internal/payments/refund`: Removes linguil+ status from a user's account in Firestore after Reddit Gold refund.
-    - `/api/verify-payment`: Checks a user's payment status in Firestore for linguil+.
-  - User
     - `/api/user/add-friend`: Adds a user to the current user's friends list on Firestore.
-    - `/api/user/friends`: Fetches the current user's list of friends on Firestore.
-    - `/api/user/image`: Proxies user Snoovatars from Firestore to the client.
-    - `/api/leaderboard`: Fetches the current user's leaderboard data from Firestore.
-    - `/api/user/me`: Retrieves the current user's profile information from Firestore.
+    - `/api/user/friends`: Fetches the current user and their friends' stats from Firestore for their leaderboard.
+    - `/api/user/me`: Fetches the current user's profile information from Firestore.
     - `/api/user/remove-friend`: Removes a user from the current user's friends list on Firestore.
     - `/api/user/update-name`: Updates the current user's display name in Firestore.
-- `storage.googleapis.com` — Required for Google TTS audio hosting.
+    - `/api/verify-payment`: Checks a user's payment status in Firestore for linguil+.
+    - `/internal/payments/fulfill`: Adds linguil+ status to a user's account in Firestore after Reddit Gold payment.
+    - `/internal/payments/refund`: Removes linguil+ status from a user's account in Firestore after Reddit Gold refund.
+- `storage.googleapis.com` — Required for daily word TTS audio hosting on Google Cloud Storage (GCS). On mobile, loading audio directly from GCS often fails or stutters because mobile browsers expect byte-range streaming. Caching the audio files prevents this, enabling reliable pronunciation playback, reducing bandwidth usage and latency, and avoiding potential GCS rate limiting, as users who replay the pronunciation load it instantly from local cache.
+  - `/api/audio/*`: Fetches and caches daily word TTS audio files from GCS.
+- Handled internally by Devvit Hono server
+  - `/api/user/image`: Fetches user Snoovatars from Reddit CDNs.
+  - `/api/auth/logout`: Logs the user out of an authenticated session.
+
 </details>
 
 ___

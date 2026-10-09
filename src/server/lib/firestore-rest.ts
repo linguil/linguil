@@ -51,7 +51,6 @@ export function getSessionDocPath(sessionId: string): string {
 async function getFirestoreConfig() {
   const apiKey = await settings.get('NEXT_PUBLIC_FIREBASE_API_KEY');
   const projectId = await settings.get('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
-  const writeSecret = await settings.get('FIRESTORE_WRITE_SECRET');
 
   if (typeof apiKey !== 'string' || !apiKey) {
     throw new Error('Firestore configuration missing: NEXT_PUBLIC_FIREBASE_API_KEY');
@@ -60,7 +59,7 @@ async function getFirestoreConfig() {
     throw new Error('Firestore configuration missing: NEXT_PUBLIC_FIREBASE_PROJECT_ID');
   }
 
-  return { apiKey, projectId, writeSecret };
+  return { apiKey, projectId };
 }
 
 async function fetchFirestore(path: string, options: RequestInit = {}) {
@@ -118,14 +117,9 @@ export async function restCreateDoc(collectionPath: string, documentId: string, 
 }
 
 export async function restSetDoc(docPath: string, data: any): Promise<void> {
-  const { writeSecret } = await getFirestoreConfig();
   const fields: Record<string, any> = {};
   for (const [key, val] of Object.entries(data)) {
     fields[key] = toFirestoreValue(val);
-  }
-  
-  if (writeSecret) {
-    fields['writeSecret'] = toFirestoreValue(writeSecret);
   }
 
   await fetchFirestore(docPath, {
@@ -135,18 +129,12 @@ export async function restSetDoc(docPath: string, data: any): Promise<void> {
 }
 
 export async function restUpdateDoc(docPath: string, data: any): Promise<void> {
-  const { writeSecret } = await getFirestoreConfig();
   const fields: Record<string, any> = {};
   const updateMask: string[] = [];
 
   for (const [key, val] of Object.entries(data)) {
     fields[key] = toFirestoreValue(val);
     updateMask.push(key);
-  }
-
-  if (writeSecret) {
-    fields['writeSecret'] = toFirestoreValue(writeSecret);
-    updateMask.push('writeSecret');
   }
 
   const queryParams = updateMask.map(f => `updateMask.fieldPaths=${f}`).join('&');
@@ -189,6 +177,6 @@ export async function restQuery(collectionId: string, constraints: any): Promise
       for (const [key, val] of Object.entries(fields)) {
         obj[key] = fromFirestoreValue(val as Record<string, any>);
       }
-      return { _id: id, ...obj };
+      return { _id: id, uid: id, ...obj };
     });
 }

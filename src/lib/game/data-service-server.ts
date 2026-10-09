@@ -23,9 +23,21 @@ const fetchFromFirestore = async (dateStr: string): Promise<RawDailyData | null>
       langCode: dailyData.word.langCode,
     };
 
+    let audioUrl = dailyData.audioUrl || null;
+    if (audioUrl) {
+      try {
+        const url = new URL(audioUrl);
+        const decodedPath = decodeURIComponent(url.pathname);
+        const match = decodedPath.match(/audio\/.*$/);
+        if (match) {
+          audioUrl = `/api/${match[0]}`;
+        }
+      } catch (_e) {}
+    }
+
     const fullData: RawDailyData = {
       word: wordObject,
-      audioUrl: dailyData.audioUrl || null,
+      audioUrl,
       distractors: dailyData.distractors as Distractors,
       languageStats: dailyData.languageStats as LanguageStats,
       date: dailyData.date,
@@ -38,22 +50,22 @@ const fetchFromFirestore = async (dateStr: string): Promise<RawDailyData | null>
   }
 };
 
-// 2. The cached function. Next.js automatically appends 'dateStr' to the cache key.
-const getCachedDailyWord = cache(
-  async (dateStr: string) => fetchFromFirestore(dateStr),
-  ['daily-word-data'], 
-  { revalidate: 3600 } // Revalidate cache hourly.
-);
+// 2. The cached function per date string. Ensures a new day gets its own fresh cache entry.
+const getCachedDailyWord = (dateStr: string) => cache(
+  async () => fetchFromFirestore(dateStr),
+  ['daily-word-data', dateStr], 
+  { revalidate: 3600, tags: [`daily-word-${dateStr}`] }
+)();
 
 // 3. The exported function.
-export const getDailyWordData = async (): Promise<RawDailyData | null> => {
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+export const getDailyWordData = async (targetDate?: string): Promise<RawDailyData | null> => {
+  const dateStr = targetDate || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   
-  const data = await getCachedDailyWord(today);
+  const data = await getCachedDailyWord(dateStr);
   
   // If the cache throws a null, fetch from Firebase directly.
   if (!data) {
-    return fetchFromFirestore(today);
+    return fetchFromFirestore(dateStr);
   }
   
   return data;

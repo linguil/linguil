@@ -30,7 +30,7 @@ interface GameState {
 }
 
 // Defines the possible actions for the game reducer.
-type GameAction = 
+type GameAction =
   | { type: 'START_LOADING' }
   | { type: 'SET_ONLINE_MODE'; payload: { data: ProcessedDailyData, score: DailyScore | null } }
   | { type: 'SET_OFFLINE_MODE'; payload: ProcessedDailyData }
@@ -112,7 +112,7 @@ export const useGame = (initialDailyWord: RawDailyData | null = null) => {
     // Try cookie first.
     const cookieToken = Cookies.get('firebaseIdToken');
     if (cookieToken) return cookieToken;
-    
+
     // Fallback to Discord session storage cache.
     const cache = sessionStorage.getItem('discord_auth_cache');
     if (cache) {
@@ -130,8 +130,8 @@ export const useGame = (initialDailyWord: RawDailyData | null = null) => {
     if (isInsideDiscord) return null;
     const pendingScoreJSON = sessionStorage.getItem(PENDING_SCORE_KEY);
     if (!pendingScoreJSON) return null;
-    try { 
-      return JSON.parse(pendingScoreJSON); 
+    try {
+      return JSON.parse(pendingScoreJSON);
     } catch {
       sessionStorage.removeItem(PENDING_SCORE_KEY);
       return null;
@@ -221,8 +221,8 @@ export const useGame = (initialDailyWord: RawDailyData | null = null) => {
       if (!isNew) {
         const savedData = sessionStorage.getItem(OFFLINE_GAME_DATA_KEY);
         if (savedData) {
-          try { 
-            dataToLoad = JSON.parse(savedData); 
+          try {
+            dataToLoad = JSON.parse(savedData);
           } catch {
             sessionStorage.removeItem(OFFLINE_GAME_DATA_KEY);
           }
@@ -293,36 +293,30 @@ export const useGame = (initialDailyWord: RawDailyData | null = null) => {
     const data = state.data;
     dispatch({ type: 'SET_AUDIO_PLAYER', payload: null });
     dispatch({ type: 'SET_AUDIO_READY', payload: false });
-    
+
     if (!data) return;
 
     if (data.audioUrl) {
       // Use pre-recorded audio if available.
       let audioSrc = data.audioUrl;
 
-      // When inside Discord, proxy audio through the app's backend to avoid CSP issues.
-      if (isInsideDiscord) {
-        try {
-          // The audioUrl from Firebase is a full HTTPS URL.
-          // e.g., https://storage.googleapis.com/BUCKET_NAME/audio/YYYY-MM-DD/FILE.mp3
-          // Extract the path to use our proxy.
-          // e.g., /api/audio/YYYY-MM-DD/FILE.mp3
-          const url = new URL(audioSrc);
-          const decodedPath = decodeURIComponent(url.pathname);
-          const match = decodedPath.match(/audio\/.*$/);
-          
-          if (match) {
-             audioSrc = `/api/${match[0]}`;
-          }
-        } catch (error) {
-          console.error('Failed to construct proxy audio URL:', error);
+      // Proxy audio through our backend proxy to avoid CSP and cross-origin blocks.
+      try {
+        const url = new URL(audioSrc, window.location.origin);
+        const decodedPath = decodeURIComponent(url.pathname);
+        const match = decodedPath.match(/audio\/.*$/);
+
+        if (match) {
+          audioSrc = `/api/${match[0]}`;
         }
+      } catch (error) {
+        console.error('Failed to construct proxy audio URL:', error);
       }
 
       const player = new Audio(audioSrc);
       dispatch({ type: 'SET_AUDIO_PLAYER', payload: player });
       dispatch({ type: 'SET_AUDIO_READY', payload: true });
-      player.onerror = () => {};
+      player.onerror = () => { };
     } else {
       // Fallback to text-to-speech.
       const handleVoicesChanged = () => {
@@ -379,7 +373,7 @@ export const useGame = (initialDailyWord: RawDailyData | null = null) => {
 
         const res = await fetch(apiUrl.toString(), {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             ...(token ? { 'x-auth-token': token } : {})
           },

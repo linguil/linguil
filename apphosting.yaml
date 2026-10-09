@@ -34,8 +34,6 @@ env:
     value: "https://linguil.app/auth/discord/callback"
   - variable: NEXT_PUBLIC_BASE_URL
     value: "https://linguil.app"
-  - variable: FIRESTORE_WRITE_SECRET
-    secret: FIRESTORE_WRITE_SECRET
   - variable: DISCORD_BOT_TOKEN
     secret: DISCORD_BOT_TOKEN
   - variable: GEMINI_API_KEY

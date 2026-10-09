@@ -43,7 +43,10 @@ export const addFriendsRoute = (app: Hono) => {
         )
       );
 
-      const playersData = chunkResults.flat();
+      const playersData = chunkResults.flat().map((p: any) => ({
+        uid: p.uid || p._id,
+        ...p,
+      }));
 
       return c.json(playersData);
     } catch (error: any) {

@@ -16,15 +16,22 @@ export const shuffleArray = <T>(array: T[]): T[] => {
   return newArray;
 };
 
+// Checks synchronously if the client is executing within Discord Activity environment.
+export function isDiscordEnvironment(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).has('frame_id');
+}
+
 // Proxies Google profile pictures through our backend.
-export function getProxiedImageUrl(url: string | null | undefined, isInsideDiscord: boolean) {
+export function getProxiedImageUrl(url: string | null | undefined, isInsideDiscord?: boolean) {
   if (!url) return url;
   
   // If it's already a Discord-hosted image or data URI, don't proxy it.
   if (url.includes('discordapp') || url.startsWith('data:')) return url;
   
   // If we are in Discord, proxy external domains.
-  if (isInsideDiscord) {
+  const inDiscord = isInsideDiscord || isDiscordEnvironment();
+  if (inDiscord) {
     return `/api/proxy/image?url=${encodeURIComponent(url)}`;
   }
   

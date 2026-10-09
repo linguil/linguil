@@ -23,7 +23,8 @@ export const GET = async (
     }
 
     const fullPath = `audio/${filePath.join('/')}`;
-    const bucket = getStorage().bucket();
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'linguil.firebasestorage.app';
+    const bucket = getStorage().bucket(bucketName);
     const file = bucket.file(fullPath);
 
     const [exists] = await file.exists();

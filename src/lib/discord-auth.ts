@@ -218,18 +218,21 @@ export const linkDiscordAccount = async (
       }
 
       let timeoutId: NodeJS.Timeout | null = null;
-      let checkClosedInterval: NodeJS.Timeout | null = null;
+      let codeReceived = false;
 
       const cleanup = () => {
         window.removeEventListener('message', handleMessage);
-        if (timeoutId) clearTimeout(timeoutId);
-        if (checkClosedInterval) clearInterval(checkClosedInterval);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
       };
 
       const handleMessage = async (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
 
         if (event.data?.type === 'DISCORD_LINK_CODE') {
+          codeReceived = true;
           cleanup();
           const code = event.data.code;
 
@@ -264,17 +267,12 @@ export const linkDiscordAccount = async (
 
       window.addEventListener('message', handleMessage);
 
-      checkClosedInterval = setInterval(() => {
-        if (popup.closed) {
-          cleanup();
-          reject(new Error('Discord authorization was cancelled or closed.'));
-        }
-      }, 1000);
-
-      // 5-minute timeout
+      // 5-minute timeout for user authorization
       timeoutId = setTimeout(() => {
-        cleanup();
-        reject(new Error('Discord authorization timed out.'));
+        if (!codeReceived) {
+          cleanup();
+          reject(new Error('Discord authorization timed out.'));
+        }
       }, 300000);
     });
   }

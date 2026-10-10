@@ -53,7 +53,7 @@ export const LinkDiscordButton = memo(() => {
       <div className="mt-8 flex justify-center items-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium shadow-sm transition-all">
           <DiscordIcon className="h-4 w-4 fill-[#5865F2]" />
-          <span>Discord Account Linked</span>
+          <span>Discord account linked</span>
           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
         </div>
       </div>
@@ -89,64 +89,63 @@ export const LinkDiscordButton = memo(() => {
 
   return (
     <>
-      <div className="mt-8 mb-4 flex flex-col items-center justify-center gap-2">
+      <div className="mt-8 mb-4 flex flex-col items-center justify-center">
         <Button
-          variant="outline"
+          type="button"
           onClick={() => {
             setErrorMessage(null);
             setIsDialogOpen(true);
           }}
           disabled={isLinking}
-          className="group relative flex items-center gap-2.5 px-6 py-2.5 rounded-full border border-[#5865F2]/40 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] dark:text-[#7983f5] font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow hover:scale-[1.02] active:scale-[0.98]"
+          className="group relative flex items-center gap-2.5 px-6 py-2.5 rounded-full border border-[#5865F2] bg-[#5865F2]/10 hover:bg-[#5865F2] text-[#5865F2] dark:text-[#7983f5] hover:text-white dark:hover:text-white font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow hover:scale-[1.02] active:scale-[0.98]"
         >
-          <DiscordIcon className="h-4 w-4 transition-transform group-hover:scale-110" />
-          <span>Link with Discord</span>
+          <DiscordIcon className="h-4 w-4 fill-current transition-transform group-hover:scale-110 text-[#5865F2] dark:text-[#7983f5] group-hover:text-white dark:group-hover:text-white" />
+          <span className="text-[#5865F2] dark:text-[#7983f5] group-hover:text-white dark:group-hover:text-white transition-colors">
+            Link with Discord
+          </span>
         </Button>
-        <p className="text-xs text-muted-foreground max-w-xs text-center">
-          Link to prevent the Discord bot from rejecting your shared scores.
-        </p>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md p-6 bg-card text-card-foreground border rounded-xl shadow-lg">
+        <DialogContent className="max-w-md p-6 bg-card text-card-foreground border border-border rounded-xl shadow-lg">
           <DialogHeader className="text-left space-y-2">
             <div className="flex items-center gap-2.5 text-[#5865F2]">
               <div className="p-2 rounded-lg bg-[#5865F2]/10">
-                <DiscordIcon className="h-6 w-6" />
+                <DiscordIcon className="h-6 w-6 fill-[#5865F2]" />
               </div>
-              <DialogTitle className="text-xl font-bold">Link with Discord</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-foreground">Link with Discord</DialogTitle>
             </div>
-            <DialogDescription className="text-sm text-muted-foreground pt-1">
+            <DialogDescription className="text-sm text-foreground/80 pt-1">
               Connect your Discord account to ensure the linguil Discord bot recognises your shared scores.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-3 text-sm">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
+            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-background/80 dark:bg-background/60 border border-border/60 shadow-xs">
               <Trophy className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-foreground">Scores merged</p>
-                <p className="text-xs text-muted-foreground">
-                  All scores across both accounts have been merged. If two scores exist for the same day, the highest score is retained.
+                <p className="font-semibold text-foreground text-sm">Merge scores</p>
+                <p className="text-xs text-foreground/75 mt-0.5 leading-relaxed">
+                  All scores across both accounts will be merged. If two scores exist for the same day, the highest score will be retained.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
-              <Users className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-background/80 dark:bg-background/60 border border-border/60 shadow-xs">
+              <Users className="h-5 w-5 text-[#5865F2] shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-foreground">Friends synced</p>
-                <p className="text-xs text-muted-foreground">
-                  All friends across both accounts have been synced.
+                <p className="font-semibold text-foreground text-sm">Sync friends</p>
+                <p className="text-xs text-foreground/75 mt-0.5 leading-relaxed">
+                  All friends across both accounts will be synced.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
+            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-background/80 dark:bg-background/60 border border-border/60 shadow-xs">
               <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-foreground">Bot verified</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground text-sm">Verify with bot</p>
+                <p className="text-xs text-foreground/75 mt-0.5 leading-relaxed">
                   The Discord bot will now verify your shared scores with a 🐻 reaction.
                 </p>
               </div>
@@ -161,26 +160,28 @@ export const LinkDiscordButton = memo(() => {
 
           <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
             <Button
-              variant="ghost"
+              type="button"
+              variant="outline"
               onClick={() => setIsDialogOpen(false)}
               disabled={isLinking}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto border-border bg-background hover:bg-muted/30 text-foreground hover:text-foreground"
             >
               Cancel
             </Button>
             <Button
+              type="button"
               onClick={handleStartLink}
               disabled={isLinking}
-              className="w-full sm:w-auto bg-[#5865F2] hover:bg-[#4752C4] text-white flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium flex items-center justify-center gap-2 shadow-sm transition-colors"
             >
               {isLinking ? (
                 <>
-                  <LoadingSpinner className="h-4 w-4" />
+                  <LoadingSpinner className="h-4 w-4 text-white" />
                   <span>Linking...</span>
                 </>
               ) : (
                 <>
-                  <DiscordIcon className="h-4 w-4" />
+                  <DiscordIcon className="h-4 w-4 fill-white" />
                   <span>Authorise & Link</span>
                 </>
               )}

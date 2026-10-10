@@ -398,6 +398,8 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
                 });
               }
             }
+          }, (err) => {
+            console.warn('useAuth userDoc snapshot warning:', err?.message);
           });
 
           // Add the unsubscribe function to the sign-out cleanup.
@@ -526,9 +528,10 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
       const idToken = user ? await user.getIdToken() : undefined;
       const result = await linkDiscordAccount(isInsideDiscord, idToken);
 
-      if (result && result.customToken) {
-        await signInWithCustomToken(result.customToken);
-        setLinkedDiscordId(result.user.uid);
+      if (result) {
+        if (result.user?.uid) {
+          setLinkedDiscordId(result.user.uid);
+        }
         setLoading(false);
         return true;
       }
@@ -539,7 +542,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       throw error;
     }
-  }, [user, isInsideDiscord, clearAuthError, handleAuthError, signInWithCustomToken]);
+  }, [user, isInsideDiscord, clearAuthError, handleAuthError]);
 
 
   const signInWithEmail = useCallback(async (email: string, password: string): Promise<boolean> => {

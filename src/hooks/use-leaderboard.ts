@@ -143,6 +143,8 @@ export const useLeaderboard = (user: User | null, isInsideDiscord?: boolean) => 
           friendUidsRef.current = newFriendUids;
           setupListeners(user.uid, newFriendUids);
         }
+      }, (error) => {
+        console.warn("Leaderboard userDocListener warning:", error?.message);
       });
     })();
 

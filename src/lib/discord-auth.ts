@@ -222,6 +222,7 @@ export const linkDiscordAccount = async (
 
       const cleanup = () => {
         window.removeEventListener('message', handleMessage);
+        window.removeEventListener('focus', handleWindowFocus);
         if (timeoutId) {
           clearTimeout(timeoutId);
           timeoutId = null;
@@ -230,6 +231,14 @@ export const linkDiscordAccount = async (
 
       const handleMessage = async (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
+
+        if (event.data?.type === 'DISCORD_LINK_CANCEL') {
+          cleanup();
+          const cancelErr = new Error(event.data?.message || 'Discord authorization was cancelled.');
+          (cancelErr as any).isCancelled = true;
+          reject(cancelErr);
+          return;
+        }
 
         if (event.data?.type === 'DISCORD_LINK_CODE') {
           codeReceived = true;
@@ -265,7 +274,26 @@ export const linkDiscordAccount = async (
         }
       };
 
+      // Listen for window focus in case the user closed the popup window directly.
+      const handleWindowFocus = () => {
+        setTimeout(() => {
+          if (!codeReceived) {
+            try {
+              if (popup && popup.closed) {
+                cleanup();
+                const cancelErr = new Error('Discord authorization window was closed.');
+                (cancelErr as any).isCancelled = true;
+                reject(cancelErr);
+              }
+            } catch (_e) {
+              // Ignore COOP access restrictions
+            }
+          }
+        }, 1200);
+      };
+
       window.addEventListener('message', handleMessage);
+      window.addEventListener('focus', handleWindowFocus);
 
       // 5-minute timeout for user authorization
       timeoutId = setTimeout(() => {

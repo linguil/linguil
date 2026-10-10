@@ -74,14 +74,23 @@ export const LinkDiscordButton = memo(() => {
         });
       }
     } catch (err: any) {
-      console.error('Error linking Discord account:', err);
-      const msg = err.message || 'Failed to link Discord account. Please try again.';
-      setErrorMessage(msg);
-      toast({
-        title: 'Discord linking failed',
-        description: msg,
-        variant: 'destructive',
-      });
+      if (err?.isCancelled || err?.message?.includes('cancelled') || err?.message?.includes('denied') || err?.message?.includes('closed')) {
+        // User intentionally cancelled authorization or closed the window.
+        setErrorMessage(null);
+        toast({
+          title: 'Linking cancelled',
+          description: 'Discord sign-in was cancelled.',
+        });
+      } else {
+        console.error('Error linking Discord account:', err);
+        const msg = err.message || 'Failed to link Discord account. Please try again.';
+        setErrorMessage(msg);
+        toast({
+          title: 'Discord linking failed',
+          description: msg,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsLinking(false);
     }
@@ -162,8 +171,10 @@ export const LinkDiscordButton = memo(() => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsDialogOpen(false)}
-              disabled={isLinking}
+              onClick={() => {
+                setIsLinking(false);
+                setIsDialogOpen(false);
+              }}
               className="w-full sm:w-auto border-border bg-background hover:bg-muted/30 text-foreground hover:text-foreground"
             >
               Cancel

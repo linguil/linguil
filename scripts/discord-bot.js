@@ -319,8 +319,15 @@ client.once('clientReady', async () => {
 client.on('interactionCreate', async (interaction) => {
   if (interaction.isButton() && interaction.customId === 'play_linguil_btn') {
     try {
-      await interaction.launchActivity();
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.launchActivity();
+      }
     } catch (err) {
+      // 10062: Unknown interaction (expired token if user had network delay > 3s)
+      // 40060: Interaction already acknowledged (rapid double-clicking button)
+      if (err.code === 10062 || err.code === 40060) {
+        return;
+      }
       console.error("Failed to launch activity:", err);
     }
     return;

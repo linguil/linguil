@@ -91,7 +91,7 @@ const AddFriendCard = memo<AddFriendCardProps>(({ friendUid, onFriendUidChange, 
         <div className="bg-friend-box p-4 rounded-lg">
 
           {/* Desktop layout (hidden on small screens). */}
-          <div className="hidden sm:grid sm:grid-cols-[1fr,auto] sm:gap-2 sm:items-center">
+          <div className="hidden sm:grid sm:grid-cols-[1fr_auto] sm:gap-2 sm:items-center">
             <div className="flex flex-col gap-4">
               <p className='text-start font-bold text-friend-box-foreground'>Add your friends</p>
               <div className="flex flex-row gap-2">

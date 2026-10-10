@@ -15,11 +15,43 @@ function DiscordCallbackPage() {
 
   useEffect(() => {
     const code = searchParams.get('code');
-
     const state = searchParams.get('state');
+    const oauthError = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
 
-    if (!code) {
-      setError('Invalid redirect from Discord. No authorization code was provided.');
+    // Handle cancellation or OAuth error from Discord.
+    if (oauthError || !code) {
+      const isCancelled = oauthError === 'access_denied' || oauthError?.includes('cancel');
+      const errorMsg = isCancelled
+        ? 'Discord authorization was cancelled.'
+        : (errorDescription || oauthError || 'Invalid redirect from Discord. No authorization code was provided.');
+
+      setError(errorMsg);
+      setStatus(isCancelled ? 'Cancelled' : 'Error');
+
+      if (state === 'link' || state?.startsWith('link')) {
+        if (typeof window !== 'undefined' && window.opener) {
+          try {
+            window.opener.postMessage({
+              type: 'DISCORD_LINK_CANCEL',
+              reason: isCancelled ? 'cancelled' : 'error',
+              message: errorMsg,
+            }, window.location.origin);
+          } catch (postErr) {
+            console.warn('Could not postMessage to opener:', postErr);
+          }
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (_e) { }
+          }, 400);
+          return;
+        }
+
+        router.push('/leaderboard?link_cancelled=true');
+        return;
+      }
+
       return;
     }
 
@@ -104,13 +136,15 @@ function DiscordCallbackPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground">
       <div className="w-full max-w-md rounded-lg border border-border bg-card text-card-foreground shadow-sm p-8 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {searchParams.get('state')?.startsWith('link') ? 'Linking account...' : 'Signing in...'}
+          {searchParams.get('state')?.startsWith('link')
+            ? (status === 'Cancelled' ? 'Linking cancelled' : 'Linking account...')
+            : (status === 'Error' ? 'Sign-in failed' : 'Signing in...')}
         </h1>
         <div className="mt-6">
-          {status !== 'Error' && <GlobalLoadingSpinner />}
+          {status !== 'Error' && status !== 'Cancelled' && <GlobalLoadingSpinner />}
         </div>
-        <p className="text-foreground/80 mt-4 text-sm">{status}</p>
-        {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
+        <p className="text-foreground/80 mt-4 text-sm">{status === 'Cancelled' ? 'Authorization was cancelled.' : status}</p>
+        {error && status !== 'Cancelled' && <p className="text-destructive mt-2 text-sm">{error}</p>}
         {searchParams.get('state')?.startsWith('link') && (
           <div className="mt-6">
             <button

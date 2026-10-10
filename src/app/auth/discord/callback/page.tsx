@@ -16,8 +16,48 @@ function DiscordCallbackPage() {
   useEffect(() => {
     const code = searchParams.get('code');
 
+    const state = searchParams.get('state');
+
     if (!code) {
       setError('Invalid redirect from Discord. No authorization code was provided.');
+      return;
+    }
+
+    // Handle Discord account linking flow.
+    if (state === 'link' || state?.startsWith('link')) {
+      if (window.opener) {
+        setStatus('Linking completed! Closing dialog...');
+        window.opener.postMessage({ type: 'DISCORD_LINK_CODE', code }, window.location.origin);
+        setTimeout(() => window.close(), 600);
+        return;
+      }
+
+      // Fallback for full-page redirect when popups are blocked.
+      const linkAccount = async () => {
+        setStatus('Linking and merging Discord account data...');
+        try {
+          const response = await fetch('/api/auth/discord/link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to link Discord account.');
+          }
+
+          const { customToken } = await response.json();
+          await signInWithCustomToken(customToken);
+          router.push('/leaderboard?linked=true');
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+          setError(`Linking failed: ${errorMessage}`);
+          setStatus('Error');
+        }
+      };
+
+      linkAccount();
       return;
     }
 
@@ -36,7 +76,7 @@ function DiscordCallbackPage() {
 
         const { customToken } = await response.json();
 
-        await signInWithCustomToken(customToken); 
+        await signInWithCustomToken(customToken);
 
         // Redirect user to the home page after successful sign-in.
         router.push('/');

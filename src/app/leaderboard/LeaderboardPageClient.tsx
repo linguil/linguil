@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { AuthButton} from '@/components/auth/AuthButton';
+import { AuthButton } from '@/components/auth/AuthButton';
 import { useToast } from '@/hooks/use-toast';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -12,6 +12,7 @@ import { DarkModeToggleSwitch } from '@/components/common/DarkModeToggleSwitch';
 import type { PlayerStats } from '@/types';
 import type { User } from 'firebase/auth';
 import MockLeaderboard from './MockLeaderboard';
+import { LinkDiscordButton } from '@/components/leaderboard/LinkDiscordButton';
 
 // Dynamically import the Leaderboard component to reduce bundle size, with a loading spinner as a fallback.
 const Leaderboard = dynamic(() => import('@/components/leaderboard/Leaderboard').then(mod => mod.Leaderboard), {
@@ -21,17 +22,17 @@ const Leaderboard = dynamic(() => import('@/components/leaderboard/Leaderboard')
 
 // Dynamically import the AddFriendCard component, also with a loading fallback.
 const AddFriendCard = dynamic(() => import('@/components/leaderboard/AddFriendCard').then(mod => mod.AddFriendCard), {
-    loading: () => <div className="min-h-[260px] lg:min-h-[180px] flex justify-center items-center"><LoadingSpinner /></div>,
-    ssr: false
+  loading: () => <div className="min-h-[260px] lg:min-h-[180px] flex justify-center items-center"><LoadingSpinner /></div>,
+  ssr: false
 });
 
 // Define an array of colors for the chart.
 const CHART_COLORS = [
-    'hsl(26 80% 67%)', // Warm Orange
-    'hsl(174 41% 51%)', // Teal
-    'hsl(43 74% 66%)', // Yellow-Orange
-    'hsl(350 65% 65%)', // Pinkish-Red
-    'hsl(210 35% 55%)', // Blue
+  'hsl(26 80% 67%)', // Warm Orange
+  'hsl(174 41% 51%)', // Teal
+  'hsl(43 74% 66%)', // Yellow-Orange
+  'hsl(350 65% 65%)', // Pinkish-Red
+  'hsl(210 35% 55%)', // Blue
 ];
 
 // This component renders the client-side logic for the leaderboard page.
@@ -49,47 +50,50 @@ const AuthenticatedView = ({ user, isInsideDiscord }: { user: User, isInsideDisc
   // Function to copy the user's UID to the clipboard.
   const handleCopy = () => {
     if (user) {
-        navigator.clipboard.writeText(user.uid);
-        toast({
-            title: 'ID copied',
-            description: 'Your ID has been copied to your clipboard',
-        });
+      navigator.clipboard.writeText(user.uid);
+      toast({
+        title: 'ID copied',
+        description: 'Your ID has been copied to your clipboard',
+      });
     }
   };
 
   return (
     <>
-        <div className="relative">
-            {/* Show DarkModeToggleSwitch if the user is authenticated. */}
-            {user && (
-                <div className="absolute top-6 right-6 z-20">
-                    <DarkModeToggleSwitch variant="gamepage" />
-                </div>
-            )}
-            {/* The Leaderboard is rendered with the user's actual data. */}
-            <Leaderboard 
-                players={players as PlayerStats[]} 
-                chartColor={chartColor} 
-                onChartColorChange={setChartColor}
-                onRemoveFriend={handleRemoveFriend}
-                onUpdateName={handleUpdateName}
-                currentUserId={user?.uid}
-            />
-        </div>
+      <div className="relative">
+        {/* Show DarkModeToggleSwitch if the user is authenticated. */}
+        {user && (
+          <div className="absolute top-6 right-6 z-20">
+            <DarkModeToggleSwitch variant="gamepage" />
+          </div>
+        )}
+        {/* The Leaderboard is rendered with the user's actual data. */}
+        <Leaderboard
+          players={players as PlayerStats[]}
+          chartColor={chartColor}
+          onChartColorChange={setChartColor}
+          onRemoveFriend={handleRemoveFriend}
+          onUpdateName={handleUpdateName}
+          currentUserId={user?.uid}
+        />
+      </div>
 
-        {/* Show the AddFriendCard if the user is authenticated. */}
-        {user ? (
-          <AddFriendCard
-            friendUid={friendUid}
-            onFriendUidChange={setFriendUid}
-            onAddFriend={async (uid: string) => {
-              await handleAddFriend(uid);
-              setFriendUid('');
-            }}
-            onCopy={handleCopy}
-            user={user as User}
-          />
-        ) : null}
+      {/* Show the AddFriendCard if the user is authenticated. */}
+      {user ? (
+        <AddFriendCard
+          friendUid={friendUid}
+          onFriendUidChange={setFriendUid}
+          onAddFriend={async (uid: string) => {
+            await handleAddFriend(uid);
+            setFriendUid('');
+          }}
+          onCopy={handleCopy}
+          user={user as User}
+        />
+      ) : null}
+
+      {/* Link with Discord button for Google and email accounts */}
+      <LinkDiscordButton />
     </>
   )
 }
@@ -107,18 +111,18 @@ const LeaderboardPageClient = () => {
   // Render the leaderboard page layout.
   return (
     <div className="w-full text-center pb-24 px-4 pt-2 md:pt-4">
-        <div className="min-h-[550px] flex flex-col justify-center">
-            <div className="w-full flex justify-end mb-4 h-10">
-            {/* Show the AuthButton if the user is authenticated. */}
-            {user && (
-                <div className="relative z-20">
-                    <AuthButton />
-                </div>
-            )}
+      <div className="min-h-[550px] flex flex-col justify-center">
+        <div className="w-full flex justify-end mb-4 h-10">
+          {/* Show the AuthButton if the user is authenticated. */}
+          {user && (
+            <div className="relative z-20">
+              <AuthButton />
             </div>
-
-            {user ? <AuthenticatedView user={user} isInsideDiscord={isInsideDiscord} /> : <MockLeaderboard />}
+          )}
         </div>
+
+        {user ? <AuthenticatedView user={user} isInsideDiscord={isInsideDiscord} /> : <MockLeaderboard />}
+      </div>
     </div>
   );
 }

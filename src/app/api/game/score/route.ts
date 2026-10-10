@@ -58,6 +58,21 @@ export async function POST(req: NextRequest) {
     // 6. Save the new score record.
     await dailyScoreDocRef.set(scoreRecord);
 
+    // 7. If this account has a linked Discord account, mirror score to ensure bot sees it.
+    try {
+      const userDoc = await db.collection('users').doc(uid).get();
+      const linkedDiscordId = userDoc.data()?.linkedDiscordId;
+      if (linkedDiscordId) {
+        const discordScoreDocRef = db.collection('users').doc(linkedDiscordId).collection('dailyScores').doc(wordIdentifier);
+        const discordDocSnap = await discordScoreDocRef.get();
+        if (!discordDocSnap.exists || (discordDocSnap.data()?.score ?? -1) < score) {
+          await discordScoreDocRef.set(scoreRecord);
+        }
+      }
+    } catch (mirrorErr) {
+      console.error('[API/GAME/SCORE] Warning mirroring score to linked Discord account:', mirrorErr);
+    }
+
     return new NextResponse(JSON.stringify({ message: 'Score saved successfully' }), { status: 201 });
 
   } catch (error) {

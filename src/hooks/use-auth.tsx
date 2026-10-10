@@ -44,6 +44,8 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<boolean>; // Function to send a password reset email.
   logout: () => Promise<void>; // Function to sign the user out.
   clearAuthError: () => void; // Function to clear any authentication errors.
+  linkedDiscordId: string | null; // The Discord ID linked to this account, if any.
+  linkWithDiscord: () => Promise<boolean>; // Initiates linking with Discord.
   openAuthDialog: () => void; // Function to open the authentication modal.
   addSignOutCleanup: (cleanup: () => void) => void; // Adds a cleanup function to be run on sign-out.
   removeSignOutCleanup: (cleanup: () => void) => void; // Removes a cleanup function.
@@ -62,6 +64,8 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
   const [authError, setAuthError] = useState<string | null>(null);
   // State for the user's payment status.
   const [hasPaid, setHasPaid] = useState(false);
+  // State for linked Discord ID.
+  const [linkedDiscordId, setLinkedDiscordId] = useState<string | null>(null);
   // State to control the visibility of the authentication dialog.
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   // State to hold the dynamically imported AuthDialog component.
@@ -267,6 +271,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
             } else {
               setUser(null);
               setHasPaid(false);
+              setLinkedDiscordId(null);
               Cookies.remove(FIREBASE_ID_TOKEN_COOKIE);
             }
             setLoading(false);
@@ -339,12 +344,15 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
             }
           });
 
-          if (response.ok && isSubscribed) {
-            const data = await response.json();
-            if (hasPaid !== data.hasPaid) {
-              setHasPaid(data.hasPaid);
+            if (response.ok && isSubscribed) {
+              const data = await response.json();
+              if (hasPaid !== data.hasPaid) {
+                setHasPaid(data.hasPaid);
+              }
+              if (data.linkedDiscordId !== undefined) {
+                setLinkedDiscordId(data.linkedDiscordId);
+              }
             }
-          }
         } catch (error) {
           console.error("Failed to sync user profile from backend:", error);
         }
@@ -370,7 +378,11 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
           // Listen for snapshot changes on the user's document.
           unsubscribe = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
-              const serverHasPaid = docSnap.data().hasPaid === true;
+              const docData = docSnap.data();
+              const serverHasPaid = docData.hasPaid === true;
+              if (docData.linkedDiscordId !== undefined) {
+                setLinkedDiscordId(docData.linkedDiscordId || null);
+              }
               // Sync local `hasPaid` state if it differs from the server.
               if (hasPaid !== serverHasPaid) {
                 setHasPaid(serverHasPaid);
@@ -506,6 +518,29 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
     }
   }, [clearAuthError, handleAuthError, logEvent, isInsideDiscord, trackRegistration]);
 
+  const linkWithDiscord = useCallback(async (): Promise<boolean> => {
+    clearAuthError();
+    setLoading(true);
+    try {
+      const { linkDiscordAccount } = await import('@/lib/discord-auth');
+      const idToken = user ? await user.getIdToken() : undefined;
+      const result = await linkDiscordAccount(isInsideDiscord, idToken);
+
+      if (result && result.customToken) {
+        await signInWithCustomToken(result.customToken);
+        setLinkedDiscordId(result.user.uid);
+        setLoading(false);
+        return true;
+      }
+      setLoading(false);
+      return false;
+    } catch (error: any) {
+      handleAuthError(error);
+      setLoading(false);
+      throw error;
+    }
+  }, [user, isInsideDiscord, clearAuthError, handleAuthError, signInWithCustomToken]);
+
 
   const signInWithEmail = useCallback(async (email: string, password: string): Promise<boolean> => {
     clearAuthError();
@@ -640,8 +675,10 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
         // Clear Discord local state and session cookie.
         setDiscordClientUser(null);
         setUser(null);
+        setLinkedDiscordId(null);
         Cookies.remove(FIREBASE_ID_TOKEN_COOKIE, { secure: true, sameSite: 'none' });
       } else {
+        setLinkedDiscordId(null);
         // Only call Firebase sign-out if in browser.
         const { handleSignOut }: { handleSignOut: () => Promise<void> } = await import('@/lib/auth-actions');
         await handleSignOut();
@@ -674,6 +711,8 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
     loading,
     authError,
     hasPaid,
+    linkedDiscordId,
+    linkWithDiscord,
     isInsideDiscord,
     isGooglePolling,
     cancelGooglePolling,

@@ -31,6 +31,13 @@ export const saveUserScore = async (
       questionResults: questionResults,
       timestamp: Timestamp.now(),
     });
+
+    // Notify backend endpoint to ensure score mirroring if user has a linked Discord account.
+    fetch('/api/game/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score, totalQuestions, wordIdentifier, questionResults }),
+    }).catch(() => {});
   } catch (error) {
     console.error('Failed to save your score:', error);
     throw new Error('Failed to save your score'); // Re-throw for the UI to handle.

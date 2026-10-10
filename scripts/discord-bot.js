@@ -393,6 +393,23 @@ async function verifyUserScore(userId, username, claimedScore, wordIdentifier) {
         .collection('dailyScores').doc(wordIdentifier).get();
     }
 
+    // If doc not found, check if this Discord account is linked to a Google/email account.
+    if (!userScoreDoc.exists) {
+      try {
+        const discordUserDoc = await db.collection('users').doc(userId).get();
+        const linkedGoogleUid = discordUserDoc.data()?.linkedGoogleUid;
+        if (linkedGoogleUid) {
+          userScoreDoc = await db.collection('users').doc(linkedGoogleUid)
+            .collection('dailyScores').doc(wordIdentifier).get();
+          if (userScoreDoc.exists) {
+            console.log(`[Anti-Cheat] Found score record under linked Google account ${linkedGoogleUid} for user ${username} (${userId}).`);
+          }
+        }
+      } catch (linkErr) {
+        console.warn(`[Anti-Cheat] Warning checking linked account for ${userId}:`, linkErr.message);
+      }
+    }
+
     if (!userScoreDoc.exists) {
       console.warn(`[Anti-Cheat] No game score record found in Firestore for user ${username} (${userId}) on ${wordIdentifier}. Reacting with snake.`);
       return { verified: false, reason: 'no_record' };

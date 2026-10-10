@@ -102,8 +102,14 @@ https://github.com/user-attachments/assets/6586485f-584d-48b6-b45a-efbf3d47d69b
 🕹️ **Game:** _[discord.com/activities/1473406949792940247](https://discord.com/activities/1473406949792940247)_ | 🌐 **Server:** _[discord.gg/p2GyWqVgea](https://discord.gg/p2GyWqVgea)_
 
 🤖 **Bot commands:**
-- _/setchannel [channel]_ — Set the channel where the bot will listen for and post linguil scores.
-- _/leaderboard_ — View the daily and all-time linguil leaderboards for this server.
+- `/setchannel [channel]` — Set the channel where the bot will listen for shared linguil scores and post leaderboards.
+- `/leaderboard` — View the daily and all-time linguil leaderboards for this server.
+
+⚖️ **Bot reactions:**
+- `🐻` — Shared linguil score passed verification and included in leaderboards.
+- `🐍` — Shared linguil score failed verification and excluded from leaderboards.
+
+  _Note:_ If the bot is 🐍-reacting to your accurate shared scores, ensure you are signed into the same Discord account when playing linguil and sharing scores, OR link your Discord account to your Google/email account on the [Leaderboard](https://linguil.app/leaderboard) page.
 
 ### Reddit
 🕹️ **Game:** _coming soon_ | 🗫 **Subreddit:** _[r/linguil](https://reddit.com/r/linguil)_

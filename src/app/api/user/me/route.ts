@@ -20,9 +20,10 @@ export async function GET(req: NextRequest) {
 
     const userData = userDoc.data();
     
-    // Return user payment status.
+    // Return user payment status and linkedDiscordId.
     return NextResponse.json({
       hasPaid: userData?.hasPaid === true,
+      linkedDiscordId: userData?.linkedDiscordId || null,
     }, { status: 200 });
 
   } catch (error) {

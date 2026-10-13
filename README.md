@@ -1,10 +1,14 @@
 # linguil
 
+<p align="center">
+  <img src="public/logo.png" alt="linguil logo" width="280" />
+</p>
+
 https://github.com/user-attachments/assets/6586485f-584d-48b6-b45a-efbf3d47d69b
 
 ## 🔍 About
 
-***[linguil](https://linguil.app)*** is the daily language guessing game. Guess the language family, language and meaning of a new word from the 100-word [Swadesh list](https://en.wikipedia.org/wiki/Swadesh_list) in a random language each day, add friends to your leaderboard, compete with your community on a Discord server, and add new languages to the game—all while learning about linguistics.
+***[linguil](https://linguil.app)*** is the daily language guessing game for linguistics enthusiasts, language learners, and word-game fans. Guess the language family, language, and meaning of a new word from the 100-word [Swadesh list](https://en.wikipedia.org/wiki/Swadesh_list) in 1 of 65 world languages each day, add friends to your leaderboard, compete with your community on a Discord server or Reddit subreddit, and add new languages to the game—all while learning about linguistics.
 
 ## ⚙️ Technical overview
 
@@ -24,9 +28,10 @@ https://github.com/user-attachments/assets/6586485f-584d-48b6-b45a-efbf3d47d69b
   - ***Radix*** (UI)
   - ***Recharts*** (custom user leaderboards)
 
-## 📖 Add a new language
+## 🌍 Add a new language
+
 <details>
-<summary>Guide:</summary>
+<summary>📋 <b>Guide</b> <i>[click to expand]</i></summary>
 <br>
 
 1. Check the [language wishlist](http://github.com/linguil/linguil/wiki/Language-Wishlist) for currently supported and unsupported languages (supported languages are ~~crossed out~~ as well as listed in [```public/data/MultiLangFamilies.csv```](https://github.com/linguil/linguil/blob/linguil/public/data/MultiLangFamilies.csv)).
@@ -41,13 +46,13 @@ https://github.com/user-attachments/assets/6586485f-584d-48b6-b45a-efbf3d47d69b
   
 </div>
 
-4. Choose and record the most appropriate Text-to-Speech (TTS) language parameters at the bottom of [```public/data/LanguageCodes.csv```](https://github.com/linguil/linguil/blob/linguil/public/data/LanguageCodes.csv) in the correct style, in order of priority—if your language is:
+4. Choose and record the most appropriate Text-to-Speech (TTS) language parameters (where langCode is the BCP 47 language tag and regionCode is the ISO 3166-1 Alpha-2 code) at the bottom of [```public/data/LanguageCodes.csv```](https://github.com/linguil/linguil/blob/linguil/public/data/LanguageCodes.csv) in the correct style, in order of priority—if your language is:
   
-      (i) supported by Google's [Gemini TTS API](https://ai.google.dev/gemini-api/docs/generate-content/speech-generation), use your language, langCode (BCP 47 language tag), and regionCode (ISO 3166-1 Alpha-2), and add your language to the ```LATIN_PREF_LANGS``` list (if it uses a Latin-based script as standard but [```public/data/MultiLangSwadesh.csv```](https://github.com/linguil/linguil/blob/linguil/public/data/MultiLangSwadesh.csv) includes an alternative non-Latin-based script);
+      (i) supported by Google's [Gemini TTS API](https://ai.google.dev/gemini-api/docs/generate-content/speech-generation), use your language, langCode, and regionCode, and add your language to the ```LATIN_PREF_LANGS``` list (if it uses a Latin-based script as standard but [```public/data/MultiLangSwadesh.csv```](https://github.com/linguil/linguil/blob/linguil/public/data/MultiLangSwadesh.csv) includes an alternative non-Latin-based script);
       
-      (ii) unsupported by Google's Gemini TTS API, but is supported by Google's [Gemini Live API](https://ai.google.dev/gemini-api/docs/live-api/capabilities#supported-languages), use your language, langCode (BCP 47 language tag), and regionCode (ISO 3166-1 Alpha-2), and add your language to the ```LATIN_PREF_LANGS``` list (if it uses a Latin-based script as standard but [```public/data/MultiLangSwadesh.csv```](https://github.com/linguil/linguil/blob/linguil/public/data/MultiLangSwadesh.csv) includes an alternative non-Latin-based script) and ```LIVE_API_DIRECT_LANGS``` list in [```functions/src/seed.ts```](https://github.com/linguil/linguil/blob/linguil/functions/src/seed.ts); or
+      (ii) unsupported by Google's Gemini TTS API, but is supported by Google's [Gemini Live API](https://ai.google.dev/gemini-api/docs/live-api/capabilities#supported-languages), use your language, langCode, and regionCode, and add your language to the ```LATIN_PREF_LANGS``` list (if it uses a Latin-based script as standard but [```public/data/MultiLangSwadesh.csv```](https://github.com/linguil/linguil/blob/linguil/public/data/MultiLangSwadesh.csv) includes an alternative non-Latin-based script) and ```LIVE_API_DIRECT_LANGS``` list in [```functions/src/seed.ts```](https://github.com/linguil/linguil/blob/linguil/functions/src/seed.ts); or
 
-      (iii) unsupported by both Google's Gemini TTS API and Gemini Live API, use the most similar language that shares the same standard script (or English if none are appropriate), its langCode (BCP 47 language tag) and regionCode (ISO 3166-1 Alpha-2), and your language as the accent (or the regional accent of your language if using English), and add your language to the ```LATIN_PREF_LANGS``` list (if the shared standard script is Latin-based) and ```UNSUPPORTED_BY_LIVE``` list in [```functions/src/seed.ts```](https://github.com/linguil/linguil/blob/linguil/functions/src/seed.ts)
+      (iii) unsupported by both Google's Gemini TTS API and Gemini Live API, use the most similar language that shares the same standard script (or English if none are appropriate), its langCode and regionCode, and your language as the accent (or the regional accent of your language if using English), and add your language to the ```LATIN_PREF_LANGS``` list (if the shared standard script is Latin-based) and ```UNSUPPORTED_BY_LIVE``` list in [```functions/src/seed.ts```](https://github.com/linguil/linguil/blob/linguil/functions/src/seed.ts)
 
 <div align=center>
   
@@ -93,30 +98,50 @@ https://github.com/user-attachments/assets/6586485f-584d-48b6-b45a-efbf3d47d69b
 
 </div>
 
-8. Submit your changes to the [```linguil```](https://github.com/linguil/linguil) repo for approval (and earn linguil+ for free).
+8. Submit your changes to the [```linguil```](https://github.com/linguil/linguil) repo for approval (and unlock linguil+ for free).
 </details>
 
-## 🌍 Community
+## 🎮 Discord _(Discord Activities)_
 
-### Discord
-🕹️ **Game:** _[discord.com/activities/1473406949792940247](https://discord.com/activities/1473406949792940247)_ | 🌐 **Server:** _[discord.gg/p2GyWqVgea](https://discord.gg/p2GyWqVgea)_
+- 🕹️ **Play game:** _[discord.com/activities/1473406949792940247](https://discord.com/activities/1473406949792940247)_
+- ➕ **Add to server:** _[discord.com/discovery/applications/1473406949792940247](https://discord.com/discovery/applications/1473406949792940247)_
+- 🌐 **Join community/support server:** _[discord.gg/p2GyWqVgea](https://discord.gg/p2GyWqVgea)_
 
-🤖 **Bot commands:**
+### 🤖 Bot commands
 - `/setchannel [channel]` — Set the channel where the bot will listen for shared linguil scores and post leaderboards.
 - `/leaderboard` — View the daily and all-time linguil leaderboards for this server.
 
-⚖️ **Bot reactions:**
-- `🐻` — Shared linguil score passed verification and included in leaderboards.
-- `🐍` — Shared linguil score failed verification and excluded from leaderboards.
+### ⚖️ Bot reactions
+- `🐻` — Shared linguil score passed verification and was included in leaderboards.
+- `🐍` — Shared linguil score failed verification and was excluded from leaderboards.
 
-  _Note:_ If the bot is 🐍-reacting to your accurate shared scores, ensure you are signed into the same Discord account when playing linguil and sharing scores, OR link your Discord account to your Google/email account on the [Leaderboard](https://linguil.app/leaderboard) page.
+  _Note:_ If the bot is `🐍`-reacting to your accurate shared scores, ensure you are signed into the same Discord account when playing linguil and sharing scores, OR link your Discord account to your Google/email account on the [Leaderboard](https://linguil.app/leaderboard) page.
 
-### Reddit
-🕹️ **Game:** _coming soon_ | 🗫 **Subreddit:** _[r/linguil](https://reddit.com/r/linguil)_
+## 👽 Reddit _(Games on Reddit)_
 
-🔓 **Fetch Domains:**
+- 🕹️ **Play game:** _[coming soon]_
+- ➕ **Add to subreddit:** _[developers.reddit.com/apps/linguil](https://developers.reddit.com/apps/linguil)_
+- 🗫 **Join community/support subreddit:** _[r/linguil](https://reddit.com/r/linguil)_
+
+### 🛠️ Setup _(for moderators)_
+1. _Install the app:_ Add `linguil` to your subreddit via the [Reddit Developer App Directory](https://developers.reddit.com/apps/linguil)—no configuration required.
+2. _Automated daily posts:_ Once installed, `linguil` automatically submits a new interactive daily game post to your subreddit every day at 05:00 UTC via the Devvit Scheduler.
+3. _Manual post creation:_ Subreddit moderators can manually create an interactive linguil game post on-demand by opening the subreddit action menu (via the `(…)` button in the top-right of the subreddit feed) and selecting `Create linguil post`.
+
+### 🎮 Features _(for players)_
+- _In-feed gameplay:_ Play linguil directly in your Reddit feed on browser or in-app on mobile (iOS/Android).
+- _Daily words:_ Identify the language family, language, and meaning of a new word (with pronunciation audio) every day.
+- _Cross-platform leaderboards:_ Track your scores and compete with other members of your subreddit (or any other players cross-platform) on your Leaderboard page.
+- _linguil+ with Reddit Gold:_ Unlock linguil+ using Reddit Gold to unlock unlimited, offline games.
+
+### 📜 Changelog
+
+**`v0.9.0`** — _Pre-release for final testing_
+
+### 🔓 Fetch Domains
+
 <details>
-<summary>Requested Devvit domains:</summary>
+<summary>Requested Devvit domains <i>[click to expand]</i></summary>
 <br>
 
 - `us-central1-linguil.cloudfunctions.net` — Serves as a secure backend proxy connecting the Devvit app to the Firebase Authentication and Firestore REST APIs, which are not directly accessible from the Devvit environment. This architecture allows for secure user management, game data storage/retrieval, and Reddit Gold payment handling, and is essential for the game's functionality, compliance with Devvit's WebView Content Security Policy (CSP) restrictions, and cross-platform interoperability with non-Reddit users (Redis cannot support the required cross-platform relational data structures). The following API routes are handled by this proxy:
@@ -138,10 +163,16 @@ https://github.com/user-attachments/assets/6586485f-584d-48b6-b45a-efbf3d47d69b
 - `storage.googleapis.com` — Required for daily word TTS audio hosting on Google Cloud Storage (GCS). On mobile, loading audio directly from GCS often fails or stutters because mobile browsers expect byte-range streaming. Caching the audio files prevents this, enabling reliable pronunciation playback, reducing bandwidth usage and latency, and avoiding potential GCS rate limiting, as users who replay the pronunciation load it instantly from local cache.
   - `/api/audio/*`: Fetches and caches daily word TTS audio files from GCS.
 - Handled internally by Devvit Hono server
-  - `/api/user/image`: Fetches user Snoovatars from Reddit CDNs.
   - `/api/auth/logout`: Logs the user out of an authenticated session.
+  - `/api/telemetry/*`: Handles Devvit Journeys telemetry events for gameplay analytics.
+  - `/api/user/image`: Fetches user Snoovatars from Reddit CDNs.
 
 </details>
+
+## 🛡️ Privacy Policy / ToS
+
+- **Web/Discord:** [linguil.app/privacy](https://linguil.app/privacy)
+- **Reddit:** Select the `ⓘ` button on the game homepage inside Reddit.
 
 ___
 

@@ -20,25 +20,53 @@ import { addRedditAuthRoute } from './routes/auth/reddit-auth';
 import { addFulfillOrderRoute } from './routes/payments/fulfill-order';
 import { addRefundOrderRoute } from './routes/payments/refund-order';
 import { getDailyWordData } from './lib/game/data-service-server';
-import { createTelemetryRouter } from '@devvit/analytics/server/reddit';
+import { addTelemetryRoutes } from './routes/telemetry';
 
 const app = new Hono();
 
-app.use(createTelemetryRouter());
+// Helper to generate the daily post title containing transliteration and native script.
+const getDailyPostTitle = async (): Promise<string> => {
+  const dailyWordData = await getDailyWordData();
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString("en-GB", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+
+  if (dailyWordData?.word) {
+    return `linguil | ${dailyWordData.word.transliteration} | ${dailyWordData.word.nativeScript} | ${formattedDate}`;
+  }
+  return `linguil: the daily language guessing game | ${formattedDate}`;
+};
 
 // Devvit-specific menu action.
 app.post('/internal/menu/create-post', async (c) => {
-  const { subredditName } = context;
+  let subredditName: string = context.subredditName || '';
+  if (!subredditName && context.subredditId) {
+    try {
+      const sub = await reddit.getSubredditInfoById(context.subredditId);
+      if (sub?.name) {
+        subredditName = sub.name;
+      }
+    } catch (e) {
+      console.error('Failed to fetch subreddit by ID:', e);
+    }
+  }
+
+  if (!subredditName) {
+    console.error('Menu create-post ran without subreddit context');
+    return c.json<UiResponse>({ showToast: 'Failed to create post: Missing subreddit context.' });
+  }
+
   const _input = await c.req.json<MenuItemRequest>();
   try {
+    const title = await getDailyPostTitle();
     await reddit.submitCustomPost({
-      subredditName: subredditName!,
-      title: 'linguil: the daily language guessing game',
+      subredditName,
+      title,
       entry: 'default',
-      runAs: 'USER',
-      userGeneratedContent: {
-        text: 'Play linguil: the daily language guessing game',
-      },
       styles: {
         height: EntrypointHeight.TALL,
         backgroundColor: '#FAF7F0FF',
@@ -46,38 +74,45 @@ app.post('/internal/menu/create-post', async (c) => {
       },
     });
     return c.json<UiResponse>({ showToast: 'Post created!' });
-  } catch (_error: any) {
-    return c.json<UiResponse>({ showToast: 'Failed to create post.' });
+  } catch (error: any) {
+    console.error('Failed to create post:', error);
+    return c.json<UiResponse>({ showToast: `Failed to create post: ${error?.message || 'Unknown error'}` });
   }
 });
 
 app.post('/internal/scheduler/daily-post', async (c) => {
   const _input = await c.req.json<TaskRequest>();
-  const { subredditName } = context;
+  let subredditName: string = context.subredditName || '';
 
-  if (!subredditName) {
-    console.error("Scheduler ran without subreddit context");
-    return c.json<TaskResponse>({ status: "ok" });
+  if (!subredditName && context.subredditId) {
+    try {
+      const sub = await reddit.getSubredditInfoById(context.subredditId);
+      if (sub?.name) {
+        subredditName = sub.name;
+      }
+    } catch (e) {
+      console.error('Failed to fetch subreddit by ID:', e);
+    }
   }
 
-  const dailyWordData = await getDailyWordData();
-  if (!dailyWordData) {
-    console.error("Failed to fetch daily word");
-    return c.json<TaskResponse>({ status: "ok" });
+  if (!subredditName) {
+    console.error('Scheduler ran without subreddit context');
+    return c.json<TaskResponse>({ status: 'ok' });
   }
 
   try {
-    const today = new Date();
+    const title = await getDailyPostTitle();
     await reddit.submitCustomPost({
       subredditName: subredditName,
-      title: `linguil | ${dailyWordData.word.transliteration} | ${dailyWordData.word.nativeScript} | ${today.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-      })}`,
-      entry: "game",
+      title,
+      entry: 'default',
+      styles: {
+        height: EntrypointHeight.TALL,
+        backgroundColor: '#FAF7F0FF',
+        backgroundColorDark: '#1C1917FF',
+      },
     });
-    console.log(`Created daily post in ${subredditName}`);
+    console.log(`Created daily post in ${subredditName}: ${title}`);
   } catch (e) {
     console.error(`Failed to create post in ${subredditName}`, e);
   }
@@ -104,6 +139,7 @@ addUpdateNameRoute(app);
 addRedditAuthRoute(app);
 addFulfillOrderRoute(app);
 addRefundOrderRoute(app);
+addTelemetryRoutes(app);
 
 // Error handler.
 app.onError((err: Error, c) => {

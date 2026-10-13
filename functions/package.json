@@ -15,7 +15,7 @@
     "@google/genai": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "facebook-nodejs-business-sdk": "^24.0.1",
-    "firebase-admin": "^13.10.0",
+    "firebase-admin": "^14.5.0",
     "firebase-functions": "^7.4.0",
     "papaparse": "^5.5.4",
     "stripe": "^22.6.2"
@@ -30,8 +30,8 @@
   "private": true,
   "allowScripts": {
     "@firebase/util@1.15.3": true,
-    "@google/genai@2.28.0": true,
     "protobufjs@7.6.6": true,
-    "re2@1.27.0": true
+    "re2@1.27.0": true,
+    "@google/genai@2.29.1": true
   }
 }

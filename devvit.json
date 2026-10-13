@@ -9,7 +9,7 @@
     "entrypoints": {
       "default": {
         "entry": "splash.html",
-        "height": "regular"
+        "height": "tall"
       },
       "game": {
         "entry": "index.html",
@@ -31,10 +31,7 @@
   },
   "permissions": {
     "reddit": {
-      "enable": true,
-      "asUser": [
-        "SUBMIT_POST"
-      ]
+      "enable": true
     },
     "http": {
       "enable": true,
@@ -72,7 +69,7 @@
         "label": "Create linguil post",
         "location": "subreddit",
         "endpoint": "/internal/menu/create-post",
-        "forUserType": "user"
+        "forUserType": "moderator"
       }
     ]
   },

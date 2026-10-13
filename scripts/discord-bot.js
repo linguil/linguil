@@ -456,20 +456,9 @@ async function handleScoreMessage(message, match) {
   const username = message.author.displayName || message.author.username;
   const wordIdentifier = `20${year}-${month}-${day}`;
   const today = getTodayDateKey();
+  const isTodayScore = wordIdentifier === today;
 
-  // Ensure a Map exists for this specific server.
-  if (!guildScores.has(guildId)) {
-    guildScores.set(guildId, new Map());
-  }
-
-  const serverMap = guildScores.get(guildId);
-
-  // Only process the user's first shared score of the day for this server.
-  if (serverMap.has(userId)) {
-    return;
-  }
-
-  // Anti-Cheat Verification: verify against Firestore daily score record.
+  // Anti-Cheat Verification: verify against Firestore daily score record for this date.
   if (db) {
     const result = await verifyUserScore(userId, username, score, wordIdentifier);
 
@@ -495,28 +484,56 @@ async function handleScoreMessage(message, match) {
     }
   }
 
-  // Record verified score in memory.
-  serverMap.set(userId, {
-    userId,
-    username,
-    score,
-    total,
-    bear
-  });
+  // Handle in-memory cache for today's daily leaderboard.
+  if (isTodayScore) {
+    if (!guildScores.has(guildId)) {
+      guildScores.set(guildId, new Map());
+    }
 
-  // Persist verified score to Firestore: daily score and all-time running total for this server.
+    const serverMap = guildScores.get(guildId);
+
+    // Check if user already recorded a score today in this server.
+    if (serverMap.has(userId)) {
+      const existing = serverMap.get(userId);
+      console.log(`[Bot] User ${username} (${userId}) already recorded today in server ${guildId} (recorded: ${existing?.score}/${existing?.total}, current: ${score}/${total}).`);
+
+      // Ensure the message has the bear reaction if it was verified and matches.
+      if (existing && existing.score === score) {
+        try {
+          const hasBear = message.reactions?.cache?.some(r => r.emoji.name === '🐻' && r.me);
+          if (!hasBear) {
+            await message.react('🐻');
+          }
+        } catch (reactErr) {
+          console.warn(`[Bot] Could not add bear reaction on duplicate message:`, reactErr.message);
+        }
+      }
+      return;
+    }
+
+    // Record verified score in today's daily in-memory leaderboard.
+    serverMap.set(userId, {
+      userId,
+      username,
+      score,
+      total,
+      bear
+    });
+  }
+
+  // Save verified score to Firestore under its date and increment all-time running total for this server if not previously recorded.
   if (db) {
     try {
-      const dailyDocRef = db.collection('discord_guilds').doc(guildId)
-        .collection('daily_scores').doc(today)
+      const scoreDocRef = db.collection('discord_guilds').doc(guildId)
+        .collection('daily_scores').doc(wordIdentifier)
         .collection('scores').doc(userId);
 
-      const existingDailyDoc = await dailyDocRef.get();
+      const existingScoreDoc = await scoreDocRef.get();
 
       const batch = db.batch();
 
-      // 1. Daily score document.
-      batch.set(dailyDocRef, {
+      // 1. Score document for this date.
+      batch.set(scoreDocRef, {
         userId,
         username,
         score,
@@ -525,8 +542,8 @@ async function handleScoreMessage(message, match) {
         createdAt: FieldValue.serverTimestamp(),
       });
 
-      // 2. All-time score document (only increment if this daily score was not previously recorded).
-      if (!existingDailyDoc.exists) {
+      // 2. All-time score document (only increment if this date's score was not previously recorded in this server).
+      if (!existingScoreDoc.exists) {
         const allTimeDocRef = db.collection('discord_guilds').doc(guildId)
           .collection('all_time_scores').doc(userId);
 
@@ -554,7 +571,7 @@ async function handleScoreMessage(message, match) {
   }
 }
 
-// Rescan recent messages in configured channels to fix any falsely snaked scores.
+// Rescan recent messages in configured channels to fix any falsely snaked scores or uncounted scores.
 async function rescanRecentChannelMessages() {
   for (const [guildId, channelId] of Object.entries(serverConfigs)) {
     try {

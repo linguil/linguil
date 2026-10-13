@@ -38,7 +38,7 @@
     "clsx": "^2.1.1",
     "discord.js": "^14.26.5",
     "firebase": "^12.19.0",
-    "firebase-admin": "^13.10.0",
+    "firebase-admin": "^14.5.0",
     "hono": "^4.12.29",
     "html5-qrcode": "^2.3.8",
     "js-cookie": "^3.0.7",
@@ -88,7 +88,7 @@
     "@firebase/util@1.15.3": true,
     "core-js@3.50.0": true,
     "esbuild@0.28.2": true,
-    "protobufjs@7.6.3": true,
+    "protobufjs@7.6.5": true,
     "unrs-resolver@1.12.2": true
   }
 }

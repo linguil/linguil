@@ -99,7 +99,10 @@ export async function restGetDoc(docPath: string): Promise<any> {
       result[key] = fromFirestoreValue(val as Record<string, any>);
     }
     return result;
-  } catch (_e) {
+  } catch (e: any) {
+    if (e?.message !== 'Document not found') {
+      console.error(`[restGetDoc] Error fetching ${docPath}:`, e);
+    }
     return null;
   }
 }

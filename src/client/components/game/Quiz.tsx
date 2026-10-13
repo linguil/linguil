@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/client/components/common/LoadingSpinner';
 import { useAuth } from '@/client/hooks/use-auth';
 
 // Dynamically import `QuestionCard` to prevent SSR.
-const DynamicQuestionCard = lazy(() => 
+const DynamicQuestionCard = lazy(() =>
   import('@/client/components/game/QuestionCard').then(mod => ({ default: mod.QuestionCard }))
 );
 
@@ -38,11 +38,41 @@ type GameState = {
   questionResults: boolean[];
 };
 
+// Storage helpers for cross-webview Devvit persistence (sessionStorage + localStorage).
+const getStorageItem = (key: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return sessionStorage.getItem(key) || localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setStorageItem = (key: string, value: string) => {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(key, value);
+  } catch { }
+  try {
+    localStorage.setItem(key, value);
+  } catch { }
+};
+
+const removeStorageItem = (key: string) => {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(key);
+  } catch { }
+  try {
+    localStorage.removeItem(key);
+  } catch { }
+};
+
 // Manages quiz state, flow, and scoring.
-const Quiz = memo<QuizProps>(({ 
-  quizId, 
-  initialQuestions, 
-  onFinish, 
+const Quiz = memo<QuizProps>(({
+  quizId,
+  initialQuestions,
+  onFinish,
   wordDisplay,
   gameModeToggleSwitch,
   darkModeToggleSwitch,
@@ -81,21 +111,22 @@ const Quiz = memo<QuizProps>(({
     }
   }, [currentQuestionIndex]);
 
-  // Cleanup session storage on sign-out.
+  // Cleanup storage on sign-out.
   useEffect(() => {
     if (!quizStateKey) return;
     const cleanup = () => {
-      sessionStorage.removeItem(quizStateKey);
+      removeStorageItem(quizStateKey);
+      removeStorageItem('initialSelectedAnswer');
     };
     addSignOutCleanup(cleanup);
     return () => removeSignOutCleanup(cleanup);
   }, [quizStateKey, addSignOutCleanup, removeSignOutCleanup]);
 
-  // Load quiz state from session storage.
+  // Load quiz state from session/local storage for cross-webview Devvit persistence.
   useEffect(() => {
     if (initialQuestions.length > 0 && !hasLoadedState.current && quizStateKey) {
       try {
-        const savedStateJSON = sessionStorage.getItem(quizStateKey);
+        const savedStateJSON = getStorageItem(quizStateKey);
         if (savedStateJSON) {
           const savedState: GameState = JSON.parse(savedStateJSON);
           if (savedState && typeof savedState.currentQuestionIndex === 'number' && savedState.currentQuestionIndex < initialQuestions.length) {
@@ -105,24 +136,54 @@ const Quiz = memo<QuizProps>(({
             setAnswerStatus(savedState.answerStatus || null);
             setQuestionResults(savedState.questionResults || []);
           }
+        } else {
+          // If complete state wasn't stored yet, check for initial answer passed from splash.
+          const initialAnswer = getStorageItem('initialSelectedAnswer');
+          if (initialAnswer) {
+            removeStorageItem('initialSelectedAnswer');
+            const isCorrect = initialQuestions[0]?.correctAnswer === initialAnswer;
+            const newScore = isCorrect ? 1 : 0;
+            const newStatus = isCorrect ? 'correct' : 'incorrect';
+            const newResults = [isCorrect];
+
+            setCurrentQuestionIndex(0);
+            setScore(newScore);
+            setSelectedAnswer(initialAnswer);
+            setAnswerStatus(newStatus);
+            setQuestionResults(newResults);
+
+            const initialGameState: GameState = {
+              currentQuestionIndex: 0,
+              score: newScore,
+              selectedAnswer: initialAnswer,
+              answerStatus: newStatus,
+              questionResults: newResults,
+            };
+            setStorageItem(quizStateKey, JSON.stringify(initialGameState));
+            if (onFirstAnswer) {
+              onFirstAnswer();
+            }
+          }
         }
       } catch {
-        // On failure, remove the invalid item.
+        // On failure, remove the invalid items.
         if (quizStateKey) {
-          sessionStorage.removeItem(quizStateKey);
+          removeStorageItem(quizStateKey);
+          removeStorageItem('initialSelectedAnswer');
         }
       } finally {
         hasLoadedState.current = true;
       }
     }
-  }, [initialQuestions.length, quizStateKey]);
+  }, [initialQuestions, quizStateKey, onFirstAnswer]);
 
   // Handle quiz completion.
   useEffect(() => {
     if (quizCompleted) {
       onFinish(score, questionResults);
       if (quizStateKey) {
-        sessionStorage.removeItem(quizStateKey);
+        removeStorageItem(quizStateKey);
+        removeStorageItem('initialSelectedAnswer');
       }
     }
   }, [quizCompleted, score, onFinish, quizStateKey, questionResults]);
@@ -145,7 +206,7 @@ const Quiz = memo<QuizProps>(({
     setAnswerStatus(newAnswerStatus);
     setQuestionResults(newQuestionResults);
 
-    // Save state to session storage.
+    // Save state to storage.
     if (quizStateKey) {
       const gameState: GameState = {
         currentQuestionIndex,
@@ -154,14 +215,14 @@ const Quiz = memo<QuizProps>(({
         answerStatus: newAnswerStatus,
         questionResults: newQuestionResults,
       };
-      sessionStorage.setItem(quizStateKey, JSON.stringify(gameState));
+      setStorageItem(quizStateKey, JSON.stringify(gameState));
     }
   }, [answerStatus, currentQuestionIndex, initialQuestions, onFirstAnswer, quizStateKey, score, questionResults]);
 
   // Trigger exit animation for next question.
   const handleNextQuestion = useCallback(() => {
     if (answerStatus) {
-        setIsExiting(true);
+      setIsExiting(true);
     }
   }, [answerStatus]);
 
@@ -184,7 +245,7 @@ const Quiz = memo<QuizProps>(({
             answerStatus: null,
             questionResults: questionResults,
           };
-          sessionStorage.setItem(quizStateKey, JSON.stringify(gameState));
+          setStorageItem(quizStateKey, JSON.stringify(gameState));
         }
       } else {
         // If it's the last question, complete the quiz.
@@ -209,7 +270,7 @@ const Quiz = memo<QuizProps>(({
   const animationClass = isExiting ? 'animate-slide-out-to-left' : 'animate-slide-in-from-right';
 
   return (
-    <div 
+    <div
       // Key forces re-render for animation.
       key={currentQuestionIndex}
       ref={questionCardRef}

@@ -1,29 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="scrollbar-gutter: auto;">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Linguil</title>
   <link rel="stylesheet" href="./app/globals.css">
+  <style>
+    html {
+      scrollbar-gutter: auto !important;
+    }
+  </style>
 </head>
-<body class="font-body antialiased">
-  <div class="flex flex-col min-h-screen">
-    <div class="grow flex flex-col items-center justify-center gap-6 text-center">
-      <header class="mb-2 flex justify-center">
-        <img
-          src="./logo.png"
-          alt="linguil logo"
-          width="240"
-          height="70"
-        />
-      </header>
-      <h1 class="sr-only">linguil | The daily language guessing game</h1>
-      <h2 class="text-xs italic -mb-1 -mt-6 text-center">The daily language guessing game</h2>
-      <button id="play-button" class="w-full max-w-xs bg-primary text-primary-foreground hover:bg-primary/90 text-xl h-14 rounded-md">
-        Play
-      </button>
+
+<body class="font-body antialiased bg-background text-foreground min-h-screen flex flex-col items-center justify-center py-2 px-4 sm:p-4">
+  <div id="main-wrapper" class="w-full max-w-2xl mx-auto flex flex-col gap-4 my-auto sm:my-0 sm:mt-auto sm:mb-0">
+    <header id="header-logo" class="-mb-2 sm:-mt-4 flex justify-center cursor-pointer">
+      <img id="logo-img" src="./logo.png" alt="linguil logo" width="216" height="63" class="max-w-full h-auto object-contain" />
+    </header>
+    <div id="question-card" class="rounded-lg border bg-card text-card-foreground shadow-lg w-full">
+      <div id="card-header" class="flex flex-col space-y-1.5 p-6 text-center pb-2">
+        <h2 id="question-prompt"
+          class="font-headline text-2xl font-semibold leading-none tracking-tight focus:outline-none">
+          Which language family is this word from?
+        </h2>
+      </div>
+      <div id="card-content" class="p-6 pt-2">
+        <div class="mt-2">
+          <div id="word-container" class="relative bg-muted p-4 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+            <div id="word-text"
+              class="grid grid-cols-[1fr_auto_1fr] items-center justify-center gap-4 w-full font-code text-3xl font-semibold text-primary-foreground tracking-wider whitespace-nowrap">
+              <span class="text-right" id="word-translit">...</span>
+              <span class="text-center text-muted-foreground">|</span>
+              <span class="text-left" id="word-native">...</span>
+            </div>
+            <button id="audio-button" type="button"
+              class="absolute right-2 inline-flex items-center justify-center h-9 w-9 hover:bg-primary hover:text-primary-foreground rounded-md text-primary-foreground transition-colors cursor-pointer"
+              aria-label="Play word audio">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-volume-2 h-4 w-4">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="toggle-row" class="flex items-center justify-between min-h-6 mb-4 gap-2">
+          <div class="flex items-center space-x-1.5">
+            <button id="dark-mode-toggle" type="button" role="switch" aria-checked="true" data-state="checked"
+              class="peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
+              aria-label="Toggle dark mode">
+              <span id="dark-mode-thumb" data-state="checked"
+                class="pointer-events-none flex h-5 w-5 items-center justify-center rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="lucide lucide-moon h-4 w-4 text-primary" aria-hidden="true">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <div class="text-center shrink min-w-0" id="result-text"></div>
+          <div></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="options-grid">
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-normal rounded-md text-sm font-medium ring-offset-background transition-all duration-300 transform hover:scale-105 bg-primary text-primary-foreground hover:bg-primary/90 h-auto p-4 cursor-pointer text-center"
+            data-index="0">...</button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-normal rounded-md text-sm font-medium ring-offset-background transition-all duration-300 transform hover:scale-105 bg-primary text-primary-foreground hover:bg-primary/90 h-auto p-4 cursor-pointer text-center"
+            data-index="1">...</button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-normal rounded-md text-sm font-medium ring-offset-background transition-all duration-300 transform hover:scale-105 bg-primary text-primary-foreground hover:bg-primary/90 h-auto p-4 cursor-pointer text-center"
+            data-index="2">...</button>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-normal rounded-md text-sm font-medium ring-offset-background transition-all duration-300 transform hover:scale-105 bg-primary text-primary-foreground hover:bg-primary/90 h-auto p-4 cursor-pointer text-center"
+            data-index="3">...</button>
+        </div>
+      </div>
     </div>
   </div>
+
   <script type="module" src="./splash.js"></script>
 </body>
+
 </html>

@@ -118,8 +118,12 @@ function HomePage() {
 }
 
 function App() {
+  const initialRoute =
+    (typeof window !== 'undefined' &&
+      (sessionStorage.getItem('targetRoute') || localStorage.getItem('targetRoute'))) ||
+    '/game';
   return (
-    <Router>
+    <Router initialEntries={[initialRoute]}>
       <ErrorBoundary>
         <React.Suspense fallback={<div>Loading...</div>}>
           <Routes>

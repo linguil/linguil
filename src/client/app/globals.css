@@ -3,8 +3,9 @@
 
 /* 1. Use @theme to generate utility classes (replaces tailwind.config.js). */
 @theme {
-  /* Automatically generates `.font-body`, `.font-mono`, and `.font-code` utilities */
+  /* Automatically generates `.font-body`, `.font-headline`, `.font-mono`, and `.font-code` utilities */
   --font-body: 'PT Sans', sans-serif;
+  --font-headline: 'PT Sans', sans-serif;
   --font-mono: 'Source Code Pro', monospace;
   --font-code: 'Source Code Pro', monospace;
 

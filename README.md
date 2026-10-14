@@ -119,7 +119,7 @@ https://github.com/user-attachments/assets/6586485f-584d-48b6-b45a-efbf3d47d69b
 
 ## 👽 Reddit _(Games on Reddit)_
 
-- 🕹️ **Play game:** _[coming soon]_
+- 🕹️ **Play game:** _[reddit.com/r/linguil/s/F9u1xda66u](https://www.reddit.com/r/linguil/s/F9u1xda66u)_
 - ➕ **Add to subreddit:** _[developers.reddit.com/apps/linguil](https://developers.reddit.com/apps/linguil)_
 - 🗫 **Join community/support subreddit:** _[r/linguil](https://reddit.com/r/linguil)_
 

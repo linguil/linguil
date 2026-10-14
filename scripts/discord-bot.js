@@ -103,20 +103,37 @@ async function loadTodayScoresFromFirestore() {
       const snapshot = await db.collection('discord_guilds').doc(guildId)
         .collection('daily_scores').doc(today)
         .collection('scores').get();
-      snapshot.forEach(doc => {
+
+      for (const doc of snapshot.docs) {
         const data = doc.data();
         if (data && data.userId) {
+          // If the document has a date that does not match today, purge it.
+          if (data.date && data.date !== today) {
+            console.warn(`[Bot] Purging misplaced score for ${data.userId} with date ${data.date} from ${today} scores.`);
+            await doc.ref.delete().catch(() => null);
+            continue;
+          }
+
+          // Verify against the user's actual game score in Firestore for today to prevent phantom scores from loading.
+          const verifyResult = await verifyUserScore(data.userId, data.username, data.score, today);
+          if (!verifyResult.verified) {
+            console.warn(`[Bot] Purging invalid phantom score for ${data.username} (${data.userId}) on ${today} from daily leaderboard (reason: ${verifyResult.reason}).`);
+            await doc.ref.delete().catch(() => null);
+            continue;
+          }
+
           serverMap.set(data.userId, {
             userId: data.userId,
             username: data.username,
             score: data.score,
             total: data.total,
             bear: data.bear,
+            date: today,
           });
         }
-      });
-      if (snapshot.size > 0) {
-        console.log(`Loaded ${snapshot.size} existing score(s) for server ${guildId} on ${today}.`);
+      }
+      if (serverMap.size > 0) {
+        console.log(`Loaded ${serverMap.size} verified score(s) for server ${guildId} on ${today}.`);
       }
     }
   } catch (err) {
@@ -161,9 +178,9 @@ function getTodayDateKey() {
 }
 
 // Generate leaderboard text combining daily results and server all-time leaderboard.
-async function buildLeaderboardText(guildId) {
+async function buildLeaderboardText(guildId, targetDate = getTodayDateKey()) {
   const medals = ["🥇", "🥈", "🥉"];
-  const today = getTodayDateKey();
+  const today = targetDate;
 
   // Fetch the current name of the server for display.
   let serverName = 'server';
@@ -193,7 +210,10 @@ async function buildLeaderboardText(guildId) {
         serverMap = guildScores.get(guildId);
         dailySnap.forEach(doc => {
           const data = doc.data();
-          serverMap.set(data.userId, data);
+          if (data && data.userId) {
+            if (data.date && data.date !== today) return;
+            serverMap.set(data.userId, data);
+          }
         });
       }
     } catch (err) {
@@ -484,7 +504,7 @@ async function handleScoreMessage(message, match) {
     }
   }
 
-  // Handle in-memory cache for today's daily leaderboard.
+  // 1. If this score is for today, manage in-memory daily leaderboard.
   if (isTodayScore) {
     if (!guildScores.has(guildId)) {
       guildScores.set(guildId, new Map());
@@ -492,7 +512,7 @@ async function handleScoreMessage(message, match) {
 
     const serverMap = guildScores.get(guildId);
 
-    // Check if user already recorded a score today in this server.
+    // If user already recorded a score today in this server, handle duplicate/re-share.
     if (serverMap.has(userId)) {
       const existing = serverMap.get(userId);
       console.log(`[Bot] User ${username} (${userId}) already recorded today in server ${guildId} (recorded: ${existing?.score}/${existing?.total}, current: ${score}/${total}).`);
@@ -517,11 +537,12 @@ async function handleScoreMessage(message, match) {
       username,
       score,
       total,
-      bear
+      bear,
+      date: wordIdentifier,
     });
   }
 
-  // Save verified score to Firestore under its date and increment all-time running total for this server if not previously recorded.
+  // 2. Persist verified score to Firestore under its date (historical or today).
   if (db) {
     try {
       const scoreDocRef = db.collection('discord_guilds').doc(guildId)
@@ -539,10 +560,11 @@ async function handleScoreMessage(message, match) {
         score,
         total,
         bear,
+        date: wordIdentifier,
         createdAt: FieldValue.serverTimestamp(),
       });
 
-      // 2. All-time score document (only increment if this date's score was not previously recorded in this server).
+      // 2. All-time score document: credit points if this date was not previously recorded in this server.
       if (!existingScoreDoc.exists) {
         const allTimeDocRef = db.collection('discord_guilds').doc(guildId)
           .collection('all_time_scores').doc(userId);
@@ -614,12 +636,14 @@ client.on('messageCreate', async (message) => {
 
 // Automatic daily leaderboard posted at midnight UTC.
 async function postLeaderboardsToAllServers() {
+  // Determine yesterday's date in UTC (the day that just completed at midnight).
+  const yesterday = new Date(Date.now() - 60000).toISOString().slice(0, 10);
   for (const [guildId, channelId] of Object.entries(serverConfigs)) {
     try {
       const channel = await client.channels.fetch(channelId).catch(() => null);
       if (!channel) continue;
 
-      const text = await buildLeaderboardText(guildId);
+      const text = await buildLeaderboardText(guildId, yesterday);
       await channel.send({ content: text, components: [getPlayButtonRow()] });
     } catch (error) {
       console.error(`Failed to post leaderboard to server ${guildId}:`, error);

@@ -1,8 +1,7 @@
 import { getAuth, UserRecord } from "firebase-admin/auth";
 import { FieldValue } from "firebase-admin/firestore";
-import * as functions from "firebase-functions/v1";
-import { onRequest } from "firebase-functions/v2/https";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
+import { onUserCreated } from "firebase-functions/v2/identity";
 import cookieParser from "cookie-parser";
 import { db } from "./init";
 import { getStripe } from "./stripe";
@@ -202,12 +201,14 @@ const setupNewUser = async (user: UserRecord) => {
   await batch.commit();
 };
 
-// Background trigger (v1) to set up a new user.
-export const onUserCreate = functions
-  .region("us-central1")
-  .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
-  .auth.user()
-  .onCreate((user) => setupNewUser(user));
+// Background trigger to set up a new user.
+export const onUserCreate = onUserCreated(
+  {
+    region: "us-central1",
+    secrets: ["STRIPE_SECRET_KEY"],
+  },
+  (event) => setupNewUser(event.data)
+);
 
 // HTTP-triggered Cloud Function to create a new user account.
 export const createUserAccount = onRequest(

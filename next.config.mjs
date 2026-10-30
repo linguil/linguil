@@ -125,7 +125,7 @@ const nextConfig = {
           // Controls browser features and APIs.
           {
             key: 'Permissions-Policy',
-            value: "clipboard-write=(self)",
+            value: "clipboard-write=*",
           },
           // Controls how much referrer information is sent.
           {

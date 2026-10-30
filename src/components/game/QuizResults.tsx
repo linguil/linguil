@@ -258,22 +258,21 @@ const QuizResults = ({
 
     setShowShareBox(true);
 
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'linguil score', text: shareText });
-        return; 
-      } catch (err) {
-        if ((err as Error).name === 'AbortError') return;
-      }
-    } 
-    
-    // Try modern clipboard API.
+    // Copy to clipboard first while transient user activation is fresh.
     try {
       await navigator.clipboard.writeText(shareText);
       toast({ title: "Score copied!", description: "Results copied to clipboard." });
     } catch (_err) {
       // Open share box if clipboard is blocked (e.g., inside Discord iframe).
       setShowShareBox(true);
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'linguil score', text: shareText });
+      } catch (_err) {
+        // Ignore AbortError or NotAllowedError in embedded iframes since text is already copied/shown.
+      }
     }
   };
 

@@ -27,14 +27,15 @@
       "entryPoint": "seedDailyWord"
     },
     "onUserCreate": {
-      "platform": "gcfv1",
       "availableMemoryMb": null,
       "timeoutSeconds": null,
       "minInstances": null,
       "maxInstances": null,
       "ingressSettings": null,
+      "concurrency": null,
       "serviceAccountEmail": null,
       "vpc": null,
+      "platform": "gcfv2",
       "region": [
         "us-central1"
       ],
@@ -43,14 +44,13 @@
           "key": "STRIPE_SECRET_KEY"
         }
       ],
-      "eventTrigger": {
-        "eventType": "providers/firebase.auth/eventTypes/user.create",
-        "eventFilters": {
-          "resource": "projects/linguil"
-        },
-        "retry": false
-      },
       "labels": {},
+      "eventTrigger": {
+        "eventType": "google.firebase.auth.user.v2.created",
+        "eventFilters": {},
+        "retry": false,
+        "region": "global"
+      },
       "entryPoint": "onUserCreate"
     },
     "createUserAccount": {

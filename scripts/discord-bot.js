@@ -348,6 +348,10 @@ client.on('interactionCreate', async (interaction) => {
       if (err.code === 10062 || err.code === 40060) {
         return;
       }
+      if (err.code === 50013) {
+        console.warn(`[Activity] Failed to launch activity for user ${interaction.user?.tag || interaction.user?.id} in guild ${interaction.guildId}: Missing permissions (DiscordAPIError 50013: Missing Permissions). This typically occurs if the server or channel has 'Use Embedded Activities' disabled, or the user/bot lacks permission to start embedded activities.`);
+        return;
+      }
       console.error("Failed to launch activity:", err);
     }
     return;
@@ -404,42 +408,80 @@ client.on('interactionCreate', async (interaction) => {
  * for the exact challenge date (wordIdentifier).
  * Returns { verified: boolean, reason?: string }
  */
-async function verifyUserScore(userId, username, claimedScore, wordIdentifier) {
+async function verifyUserScore(userId, username, claimedScore, wordIdentifier, message = null) {
   if (!db) {
     return { verified: false, reason: 'database_unavailable' };
   }
 
   try {
-    let userScoreDoc = await db.collection('users').doc(userId)
-      .collection('dailyScores').doc(wordIdentifier).get();
-
-    // If doc not found immediately, retry once after 1.5s in case of write latency right after quiz finish.
-    if (!userScoreDoc.exists) {
-      await new Promise(r => setTimeout(r, 1500));
-      userScoreDoc = await db.collection('users').doc(userId)
-        .collection('dailyScores').doc(wordIdentifier).get();
+    // Collect potential UIDs for this player (Discord UID and any linked Google UID).
+    const candidateUids = [userId];
+    try {
+      const discordUserDoc = await db.collection('users').doc(userId).get();
+      const linkedGoogleUid = discordUserDoc.data()?.linkedGoogleUid;
+      if (linkedGoogleUid) {
+        candidateUids.push(linkedGoogleUid);
+      } else {
+        const revSnap = await db.collection('users').where('linkedDiscordId', '==', userId).limit(1).get();
+        if (!revSnap.empty) {
+          candidateUids.push(revSnap.docs[0].id);
+        }
+      }
+    } catch (linkErr) {
+      console.warn(`[Anti-Cheat] Warning checking linked account for ${userId}:`, linkErr.message);
     }
 
-    // If doc not found, check if this Discord account is linked to a Google/email account.
-    if (!userScoreDoc.exists) {
-      try {
-        const discordUserDoc = await db.collection('users').doc(userId).get();
-        const linkedGoogleUid = discordUserDoc.data()?.linkedGoogleUid;
-        if (linkedGoogleUid) {
-          userScoreDoc = await db.collection('users').doc(linkedGoogleUid)
-            .collection('dailyScores').doc(wordIdentifier).get();
-          if (userScoreDoc.exists) {
-            console.log(`[Anti-Cheat] Found score record under linked Google account ${linkedGoogleUid} for user ${username} (${userId}).`);
-          }
+    // Try finding the score across candidate accounts with retries (in case of write latency when user shares immediately).
+    let userScoreDoc = null;
+    let foundUid = null;
+    const maxAttempts = 5;
+    const delayMs = 2000;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      for (const uid of candidateUids) {
+        const doc = await db.collection('users').doc(uid)
+          .collection('dailyScores').doc(wordIdentifier).get();
+        if (doc.exists) {
+          userScoreDoc = doc;
+          foundUid = uid;
+          break;
         }
-      } catch (linkErr) {
-        console.warn(`[Anti-Cheat] Warning checking linked account for ${userId}:`, linkErr.message);
+      }
+
+      if (userScoreDoc?.exists) {
+        if (attempt > 2 && message) {
+          console.log(`[Anti-Cheat] Score found on attempt ${attempt} for user ${username} (${userId}) on ${wordIdentifier}. Correcting snake reaction to bear reaction.`);
+        }
+        break;
+      }
+
+      // If score check has not succeeded after the 2nd attempt, give immediate feedback with a snake reaction.
+      // Continue polling up to maxAttempts; if verified later, the snake is removed and replaced with a bear.
+      if (attempt === 2 && message) {
+        try {
+          const hasSnake = message.reactions?.cache?.some(r => r.emoji.name === '🐍' && r.me);
+          if (!hasSnake) {
+            console.log(`[Anti-Cheat] Score not found after attempt 2 for user ${username} (${userId}) on ${wordIdentifier}. Adding snake reaction while polling continues...`);
+            await message.react('🐍');
+          }
+        } catch (reactErr) {
+          console.warn(`[Anti-Cheat] Could not add snake reaction on attempt 2 for user ${username}:`, reactErr.message);
+        }
+      }
+
+      // If not found and attempts remain, wait for the user's browser/client write to finish syncing.
+      if (attempt < maxAttempts) {
+        await new Promise(r => setTimeout(r, delayMs));
       }
     }
 
-    if (!userScoreDoc.exists) {
+    if (!userScoreDoc || !userScoreDoc.exists) {
       console.warn(`[Anti-Cheat] No game score record found in Firestore for user ${username} (${userId}) on ${wordIdentifier}. Reacting with snake.`);
       return { verified: false, reason: 'no_record' };
+    }
+
+    if (foundUid && foundUid !== userId) {
+      console.log(`[Anti-Cheat] Found score record under linked Google account ${foundUid} for user ${username} (${userId}).`);
     }
 
     const recordedScore = userScoreDoc.data()?.score;
@@ -480,12 +522,15 @@ async function handleScoreMessage(message, match) {
 
   // Anti-Cheat Verification: verify against Firestore daily score record for this date.
   if (db) {
-    const result = await verifyUserScore(userId, username, score, wordIdentifier);
+    const result = await verifyUserScore(userId, username, score, wordIdentifier, message);
 
     if (!result.verified) {
       if (result.reason === 'no_record' || result.reason === 'score_mismatch') {
         try {
-          await message.react('🐍');
+          const hasSnake = message.reactions?.cache?.some(r => r.emoji.name === '🐍' && r.me);
+          if (!hasSnake) {
+            await message.react('🐍');
+          }
         } catch (reactErr) {
           console.error("Failed to react with snake emoji:", reactErr);
         }
@@ -493,11 +538,14 @@ async function handleScoreMessage(message, match) {
       return;
     }
 
-    // Honest player verified: remove any snake reaction previously given.
+    // Honest player verified: remove any snake reaction previously given (e.g. from early feedback at attempt 2).
     try {
-      const snakeReaction = message.reactions.cache.get('🐍');
+      let snakeReaction = message.reactions?.cache?.find(r => r.emoji.name === '🐍');
+      if (!snakeReaction) {
+        snakeReaction = message.reactions?.resolve('🐍');
+      }
       if (snakeReaction) {
-        await snakeReaction.users.remove(client.user.id);
+        await snakeReaction.users.remove(client.user.id).catch(() => { });
       }
     } catch (removeErr) {
       // Ignore reaction removal errors if bot lacks permission or reaction absent.
@@ -597,10 +645,38 @@ async function handleScoreMessage(message, match) {
 async function rescanRecentChannelMessages() {
   for (const [guildId, channelId] of Object.entries(serverConfigs)) {
     try {
-      const channel = await client.channels.fetch(channelId).catch(() => null);
-      if (!channel || !channel.isTextBased()) continue;
+      let fetchError = null;
+      const channel = await client.channels.fetch(channelId).catch(err => {
+        fetchError = err;
+        return null;
+      });
 
-      const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+      if (!channel) {
+        if (fetchError?.code === 50001) {
+          console.warn(`[Rescan] Skipping guild ${guildId}: Bot lacks permission to access channel ${channelId} (DiscordAPIError 50001: Missing Access). The bot/app was removed from the server or lacks 'Read Messages' permission in the channel.`);
+        } else if (fetchError?.code === 10003) {
+          console.warn(`[Rescan] Skipping guild ${guildId}: Configured channel ${channelId} was not found (DiscordAPIError 10003: Unknown Channel). The channel was likely deleted.`);
+        } else if (fetchError) {
+          console.warn(`[Rescan] Skipping guild ${guildId}: Could not fetch channel ${channelId}:`, fetchError.message);
+        }
+        continue;
+      }
+
+      if (!channel.isTextBased() || typeof channel.messages?.fetch !== 'function') {
+        console.warn(`[Rescan] Skipping guild ${guildId}: Configured channel #${channel.name || channelId} (type ${channel.type}) is not a readable text channel. Forum or voice channels cannot receive direct text messages.`);
+        continue;
+      }
+
+      const messages = await channel.messages.fetch({ limit: 100 }).catch(err => {
+        if (err.code === 50001) {
+          console.warn(`[Rescan] Skipping guild ${guildId}: Bot lacks permission to read messages in #${channel.name || channelId} (DiscordAPIError 50001: Missing Access).`);
+        } else if (err.code === 50013) {
+          console.warn(`[Rescan] Skipping guild ${guildId}: Bot lacks permission to read message history in #${channel.name || channelId} (DiscordAPIError 50013: Missing Permissions).`);
+        } else {
+          console.warn(`[Rescan] Could not fetch messages for guild ${guildId}:`, err.message);
+        }
+        return null;
+      });
       if (!messages) continue;
 
       // Process chronologically (oldest to newest)
@@ -640,13 +716,38 @@ async function postLeaderboardsToAllServers() {
   const yesterday = new Date(Date.now() - 60000).toISOString().slice(0, 10);
   for (const [guildId, channelId] of Object.entries(serverConfigs)) {
     try {
-      const channel = await client.channels.fetch(channelId).catch(() => null);
-      if (!channel) continue;
+      let fetchError = null;
+      const channel = await client.channels.fetch(channelId).catch(err => {
+        fetchError = err;
+        return null;
+      });
+
+      if (!channel) {
+        if (fetchError?.code === 50001) {
+          console.warn(`[Leaderboard] Skipping guild ${guildId}: Bot lacks permission to access channel ${channelId} (DiscordAPIError 50001: Missing Access). The bot/app was removed from the server or lacks 'Read Messages' permission in the channel.`);
+        } else if (fetchError?.code === 10003) {
+          console.warn(`[Leaderboard] Skipping guild ${guildId}: Configured channel ${channelId} was not found (DiscordAPIError 10003: Unknown Channel). The channel was likely deleted.`);
+        } else if (fetchError) {
+          console.warn(`[Leaderboard] Skipping guild ${guildId}: Could not fetch channel ${channelId}:`, fetchError.message);
+        }
+        continue;
+      }
+
+      if (!channel.isTextBased() || typeof channel.send !== 'function') {
+        console.warn(`[Leaderboard] Skipping guild ${guildId}: configured channel #${channel.name || channelId} (type ${channel.type}) is not a writable text channel. Forum or voice channels cannot receive direct text messages. An admin should run /setchannel to configure a valid text channel.`);
+        continue;
+      }
 
       const text = await buildLeaderboardText(guildId, yesterday);
       await channel.send({ content: text, components: [getPlayButtonRow()] });
     } catch (error) {
-      console.error(`Failed to post leaderboard to server ${guildId}:`, error);
+      if (error.code === 50001) {
+        console.warn(`[Leaderboard] Skipping guild ${guildId}: Bot lacks permission to access channel #${channelId} (DiscordAPIError 50001: Missing Access). The bot/app was removed from the server or lacks 'Read Messages' permission in the channel.`);
+      } else if (error.code === 50013) {
+        console.warn(`[Leaderboard] Skipping guild ${guildId}: Bot lacks permission to send messages in channel #${channelId} (DiscordAPIError 50013: Missing Permissions). The bot lacks 'Send Messages' permission in the channel.`);
+      } else {
+        console.error(`Failed to post leaderboard to server ${guildId}:`, error);
+      }
     }
   }
 

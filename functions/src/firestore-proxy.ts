@@ -4,6 +4,7 @@ import { getApps } from "firebase-admin/app";
 import * as logger from "firebase-functions/logger";
 
 const firestoreApiKeySecret = defineSecret("NEXT_PUBLIC_FIREBASE_API_KEY");
+const firestoreWriteSecret = defineSecret("FIRESTORE_WRITE_SECRET");
 
 // Retrieves an internal Google Cloud OAuth access token to authorize the REST proxy as Admin.
 async function getAdminAccessToken(): Promise<string | null> {
@@ -36,7 +37,7 @@ export const firestoreProxy = onRequest(
   {
     region: "us-central1",
     invoker: "public",
-    secrets: [firestoreApiKeySecret],
+    secrets: [firestoreApiKeySecret, firestoreWriteSecret],
   },
   async (req, res) => {
     // Set CORS headers for preflight and actual requests.
@@ -54,10 +55,11 @@ export const firestoreProxy = onRequest(
       return;
     }
 
-    // Authenticate the request from the Devvit app using the shared API key.
-    const expectedKeyValue = firestoreApiKeySecret.value();
-    if (!expectedKeyValue) {
-      logger.error("FATAL: The NEXT_PUBLIC_FIREBASE_API_KEY secret is not available.");
+    // Authenticate the request from the Devvit app using the dedicated write secret.
+    const expectedWriteSecret = firestoreWriteSecret.value();
+    const firebaseApiKey = firestoreApiKeySecret.value();
+    if (!expectedWriteSecret || !firebaseApiKey) {
+      logger.error("FATAL: FIRESTORE_WRITE_SECRET or NEXT_PUBLIC_FIREBASE_API_KEY secret is not available.");
       res.status(500).send("Internal Server Error: Server configuration error.");
       return;
     }
@@ -65,8 +67,8 @@ export const firestoreProxy = onRequest(
     const requestKeyHeader = req.headers["x-proxy-api-key"];
     const requestKey = Array.isArray(requestKeyHeader) ? requestKeyHeader[0] : requestKeyHeader;
 
-    if (requestKey !== expectedKeyValue) {
-      logger.warn("Unauthorized API key from Devvit app.", { key: requestKey });
+    if (requestKey !== expectedWriteSecret) {
+      logger.warn("Unauthorized API key from Devvit app.");
       res.status(401).send("Unauthorized");
       return;
     }
@@ -80,7 +82,7 @@ export const firestoreProxy = onRequest(
 
     try {
       const baseUrl = "https://firestore.googleapis.com/v1/projects/linguil/databases/(default)/documents";
-      const finalUrl = `${baseUrl}/${path}${path.includes("?") ? "&" : "?"}key=${expectedKeyValue}`;
+      const finalUrl = `${baseUrl}/${path}${path.includes("?") ? "&" : "?"}key=${firebaseApiKey}`;
 
       const adminToken = await getAdminAccessToken();
       const headers: Record<string, string> = {

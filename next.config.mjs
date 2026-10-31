@@ -44,7 +44,6 @@ const cspPolicies = {
     'https://ssl.gstatic.com',
     'https://linguil.app',
     'https://*.linguil.app',
-    'https://*.cloudworkstations.dev',
   ],
   'img-src': [
     "'self'",
@@ -96,7 +95,6 @@ const nextConfig = {
   // Prevents server-side packages from being bundled with the client-side code.
   serverExternalPackages: ['firebase-admin', 'discord.js', 'node-cron'],
   turbopack: {},
-  allowedDevOrigins: ['*.cloudworkstations.dev', '9000-firebase-studio-1755218936202.cluster-fbfjltn375c6wqxlhoehbz44sk.cloudworkstations.dev'],
   // Optimizes images to modern formats like AVIF and WebP.
   images: {
     formats: ['image/avif', 'image/webp'],

@@ -4,6 +4,7 @@ import type { LanguageStats, Word } from '@/shared/types/index';
 import { Button } from '@/client/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/client/components/ui/card';
 import { useState, useEffect, useRef, memo } from 'react';
+import { flushSync } from 'react-dom';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/client/hooks/use-auth';
 import { Share2, Lock, Unlock } from 'lucide-react';
@@ -210,6 +211,7 @@ const QuizResults = ({
   const { user, hasPaid, signInWithReddit, fetchUserProfile } = useAuth();
   const { toast } = useToast();
   const resultsRef = useRef<HTMLDivElement>(null);
+  const shareTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const [showShareBox, setShowShareBox] = useState(false);
 
@@ -229,15 +231,29 @@ const QuizResults = ({
       return;
     }
 
-    setShowShareBox(true);
+    flushSync(() => {
+      setShowShareBox(true);
+    });
 
     // Copy to clipboard first while transient user activation is fresh.
     try {
       await navigator.clipboard.writeText(shareText);
       toast({ title: "Score copied!", description: "Results copied to clipboard." });
     } catch (_err) {
-      // Open share box if clipboard is blocked (e.g., inside Reddit iframe).
-      setShowShareBox(true);
+      // If clipboard API is blocked (e.g., inside Reddit iframe), select the visible share textarea and copy from it.
+      const textArea = shareTextAreaRef.current;
+      if (textArea) {
+        textArea.focus();
+        textArea.select();
+        try {
+          const copyFromSelection = (document as unknown as Record<string, (commandId: string) => boolean>)['execCommand'];
+          if (copyFromSelection?.call(document, 'copy')) {
+            toast({ title: "Score copied!", description: "Results copied to clipboard." });
+          }
+        } catch (_copyErr) {
+          // Leave text selected in the share box for manual copying.
+        }
+      }
     }
 
     if (navigator.share) {
@@ -293,6 +309,7 @@ const QuizResults = ({
               {showShareBox && (
                 <div className="absolute bottom-[4.5rem] right-6 z-50 bg-card text-center animate-in slide-in-from-bottom-2 fade-in duration-200">
                   <textarea
+                    ref={shareTextAreaRef}
                     readOnly
                     value={shareText}
                     rows={5}

@@ -13,7 +13,7 @@ export const createCheckoutSession = onRequest({
   region: "us-central1",
   secrets: ["STRIPE_SECRET_KEY"],
   memory: "256MiB",
-  cors: [ "https://www.linguil.app", "https://linguil.web.app", "https://linguil.firebaseapp.com", /^https:\/\/.*\.cloudworkstations\.dev$/ ]
+  cors: [ "https://www.linguil.app", "https://linguil.web.app", "https://linguil.firebaseapp.com" ]
 }, async (req, res) => {
   // Initialize Stripe.
   const stripe = getStripe();

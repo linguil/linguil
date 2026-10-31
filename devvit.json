@@ -101,6 +101,11 @@
         "label": "NEXT_PUBLIC_FIREBASE_API_KEY",
         "isSecret": true
       },
+      "FIRESTORE_WRITE_SECRET": {
+        "type": "string",
+        "label": "FIRESTORE_WRITE_SECRET",
+        "isSecret": true
+      },
       "NEXT_PUBLIC_FIREBASE_PROJECT_ID": {
         "type": "string",
         "label": "NEXT_PUBLIC_FIREBASE_PROJECT_ID",

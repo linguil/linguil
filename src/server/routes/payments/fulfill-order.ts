@@ -41,10 +41,14 @@ export const addFulfillOrderRoute = (app: Hono) => {
 
       // Forward the order to the Reddit Gold webhook for recording.
       const redditGoldWebhookUrl = await settings.get('NEXT_PUBLIC_FIREBASE_REDDIT_GOLD_WEBHOOK_URL');
-      if (typeof redditGoldWebhookUrl === 'string') {
+      const writeSecret = await settings.get('FIRESTORE_WRITE_SECRET');
+      if (typeof redditGoldWebhookUrl === 'string' && typeof writeSecret === 'string') {
         await fetch(redditGoldWebhookUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-proxy-api-key': writeSecret,
+          },
           body: JSON.stringify(order),
         });
       }

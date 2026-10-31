@@ -220,7 +220,6 @@ export const createUserAccount = onRequest(
       "https://www.linguil.app",
       "https://linguil.web.app",
       "https://linguil.firebaseapp.com",
-      /^https:\/\/.*\.cloudworkstations\.dev$/,
     ],
   },
   (req, res) => {

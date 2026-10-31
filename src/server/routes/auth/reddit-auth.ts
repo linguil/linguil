@@ -43,14 +43,14 @@ export const addRedditAuthRoute = (app: Hono) => {
       }
       const snoovatarUrl = await reddit.getSnoovatarUrl(username);
 
-      const apiKey = await settings.get('NEXT_PUBLIC_FIREBASE_API_KEY');
+      const writeSecret = await settings.get('FIRESTORE_WRITE_SECRET');
 
       // Forward the user's details to the Firebase authentication function with authorization header.
       const response = await fetch(REDDIT_AUTH_URL, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-proxy-api-key': typeof apiKey === 'string' ? apiKey : '',
+          'x-proxy-api-key': typeof writeSecret === 'string' ? writeSecret : '',
         },
         body: JSON.stringify({
           redditId: user.id,

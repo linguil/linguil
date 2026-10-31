@@ -4,6 +4,7 @@ import type { LanguageStats, Word } from "@/types/index";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef, memo } from "react";
+import { flushSync } from "react-dom";
 import type { ReactNode } from 'react';
 import { useAuth } from "@/hooks/use-auth";
 import { Share2, Lock, Unlock } from 'lucide-react';
@@ -79,7 +80,7 @@ const ScoreDisplay = memo(({ score, totalQuestions }: { score: number, totalQues
       messageEl.style.fontSize = ''; // Reset font size before calculating.
       const containerWidth = container.clientWidth;
       const messageWidth = messageEl.scrollWidth;
-      
+
       // If message overflows, reduce font size.
       if (messageWidth > containerWidth) {
         const initialFontSize = parseFloat(getComputedStyle(messageEl).fontSize);
@@ -220,15 +221,15 @@ type QuizResultsProps = {
 };
 
 // Displays quiz results, stats, and CTAs.
-const QuizResults = ({ 
-  score, 
-  totalQuestions, 
+const QuizResults = ({
+  score,
+  totalQuestions,
   questionResults,
-  word, 
-  languageStats, 
-  startOfflineGame, 
-  wordDisplay, 
-  gameModeToggleSwitch, 
+  word,
+  languageStats,
+  startOfflineGame,
+  wordDisplay,
+  gameModeToggleSwitch,
   darkModeToggleSwitch,
   isOfflineGame,
   date,
@@ -237,6 +238,7 @@ const QuizResults = ({
   const { user, hasPaid, openAuthDialog } = useAuth();
   const { toast } = useToast();
   const resultsRef = useRef<HTMLDivElement>(null);
+  const shareTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const [showShareBox, setShowShareBox] = useState(false);
 
@@ -256,15 +258,29 @@ const QuizResults = ({
       return;
     }
 
-    setShowShareBox(true);
+    flushSync(() => {
+      setShowShareBox(true);
+    });
 
     // Copy to clipboard first while transient user activation is fresh.
     try {
       await navigator.clipboard.writeText(shareText);
       toast({ title: "Score copied!", description: "Results copied to clipboard." });
     } catch (_err) {
-      // Open share box if clipboard is blocked (e.g., inside Discord iframe).
-      setShowShareBox(true);
+      // If clipboard API is blocked (e.g., inside Discord iframe), select the visible share textarea and copy from it.
+      const textArea = shareTextAreaRef.current;
+      if (textArea) {
+        textArea.focus();
+        textArea.select();
+        try {
+          const copyFromSelection = (document as unknown as Record<string, (commandId: string) => boolean>)['execCommand'];
+          if (copyFromSelection?.call(document, 'copy')) {
+            toast({ title: "Score copied!", description: "Results copied to clipboard." });
+          }
+        } catch (_copyErr) {
+          // Leave text selected in the share box for manual copying.
+        }
+      }
     }
 
     if (navigator.share) {
@@ -281,7 +297,7 @@ const QuizResults = ({
       <CardHeader className="text-center pb-0.5">
         <LanguageStatsDisplay languageStats={languageStats} word={word} />
       </CardHeader>
-      
+
       <CardContent className="text-center pt-2 relative">
         {wordDisplay}
         <div className="relative flex justify-center items-center mb-2">
@@ -306,19 +322,20 @@ const QuizResults = ({
         </div>
 
         <div className="flex justify-center items-center gap-2">
-          <CallToActionButton 
+          <CallToActionButton
             hasPaid={hasPaid}
             startOfflineGame={startOfflineGame}
             openAuthDialog={openAuthDialog}
             user={user}
           />
 
-            {!isOfflineGame && (
-              <>
+          {!isOfflineGame && (
+            <>
               {/* Fallback share box */}
               {showShareBox && (
                 <div className="absolute bottom-[4.5rem] right-6 z-50 bg-card text-center animate-in slide-in-from-bottom-2 fade-in duration-200">
                   <textarea
+                    ref={shareTextAreaRef}
                     readOnly
                     value={shareText}
                     rows={5}
@@ -339,7 +356,7 @@ const QuizResults = ({
                 <Share2 className="h-5 w-5" />
               </Button>
             </>
-            )}
+          )}
         </div>
       </CardContent>
     </Card>

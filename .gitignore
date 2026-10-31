@@ -30,7 +30,6 @@ yarn-error.log*
 firebase-debug.log*
 
 # Configuration
-/.idx/
 /.vscode/
 /.idea/
 .DS_Store
@@ -41,14 +40,11 @@ server-configs.json
 
 # Firebase
 /.firebase/
-firestore.rules
 
 # Misc
 src/shared/data
 
 # Antigravity agent configurations
 .agents/
-skills-lock.json
 AGENTS.md
 CLAUDE.md
-studio.json

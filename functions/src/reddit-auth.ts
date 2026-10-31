@@ -13,14 +13,13 @@ if (getApps().length === 0) {
 const auth = getAuth();
 
 // Define secrets used in this function.
-const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
-const firestoreApiKeySecret = defineSecret("NEXT_PUBLIC_FIREBASE_API_KEY");
+const firestoreWriteSecret = defineSecret("FIRESTORE_WRITE_SECRET");
 
 // Handles user authentication via Reddit.
 // Checks for an existing user with the provided redditId.
 // If found, returns a custom token; otherwise, creates a new user and returns a token.
 export const redditAuth = onRequest(
-  { region: "us-central1", secrets: [stripeSecretKey, firestoreApiKeySecret], memory: "256MiB", cors: true },
+  { region: "us-central1", secrets: [firestoreWriteSecret], memory: "256MiB", cors: true },
   async (req, res) => {
     // Ensure the request is a POST request.
     if (req.method !== "POST") {
@@ -30,12 +29,12 @@ export const redditAuth = onRequest(
     }
 
     // Verify caller authentication from the Devvit server.
-    const expectedKey = firestoreApiKeySecret.value();
+    const expectedKey = firestoreWriteSecret.value();
     const requestKeyHeader = req.headers["x-proxy-api-key"] || req.headers["x-devvit-secret"];
     const requestKey = Array.isArray(requestKeyHeader) ? requestKeyHeader[0] : requestKeyHeader;
 
-    if (expectedKey && requestKey !== expectedKey) {
-      logger.warn("Unauthorized redditAuth call from unauthenticated source.", { key: requestKey });
+    if (!expectedKey || requestKey !== expectedKey) {
+      logger.warn("Unauthorized redditAuth call from unauthenticated source.");
       res.status(401).send({ error: "Unauthorized" });
       return;
     }

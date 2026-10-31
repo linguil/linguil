@@ -49,28 +49,28 @@ export function getSessionDocPath(sessionId: string): string {
 }
 
 async function getFirestoreConfig() {
-  const apiKey = await settings.get('NEXT_PUBLIC_FIREBASE_API_KEY');
+  const writeSecret = await settings.get('FIRESTORE_WRITE_SECRET');
   const projectId = await settings.get('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
 
-  if (typeof apiKey !== 'string' || !apiKey) {
-    throw new Error('Firestore configuration missing: NEXT_PUBLIC_FIREBASE_API_KEY');
+  if (typeof writeSecret !== 'string' || !writeSecret) {
+    throw new Error('Firestore configuration missing: FIRESTORE_WRITE_SECRET');
   }
   if (typeof projectId !== 'string' || !projectId) {
     throw new Error('Firestore configuration missing: NEXT_PUBLIC_FIREBASE_PROJECT_ID');
   }
 
-  return { apiKey, projectId };
+  return { writeSecret, projectId };
 }
 
 async function fetchFirestore(path: string, options: RequestInit = {}) {
-  const { apiKey } = await getFirestoreConfig();
+  const { writeSecret } = await getFirestoreConfig();
   const url = 'https://us-central1-linguil.cloudfunctions.net/firestoreProxy';
 
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-proxy-api-key': apiKey,
+      'x-proxy-api-key': writeSecret,
     },
     body: JSON.stringify({
       path,
